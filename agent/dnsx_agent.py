@@ -58,10 +58,10 @@ class DnsxAgent(agent.Agent):
             subprocess.run(command, check=False)
             return json.load(t)
 
-    def _prepare_command(self, input, output) -> List[str]:
+    def _prepare_command(self, domain_file, output) -> List[str]:
         """Prepare dnsx command."""
         return ['dnsx', '-silent', '-a', '-aaaa', '-cname', '-ns',
-                '-txt', '-ptr', '-mx', '-soa', '-resp', '-json', output, '-l', input]
+                '-txt', '-ptr', '-mx', '-soa', '-resp', '-json', output, '-l', domain_file]
 
 
 if __name__ == '__main__':
