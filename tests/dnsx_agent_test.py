@@ -12,4 +12,4 @@ def testAgentDnsx_whenDomainNameAsset_RunScan(scan_message, test_agent, mocker, 
         test_agent.process(scan_message)
         mock_command_run.assert_called_once()
         assert len(agent_mock) > 0
-        assert agent_mock[0].selector == 'v3.asset.domain_name'
+        assert agent_mock[0].selector == 'v3.asset.domain_name.dns_record'

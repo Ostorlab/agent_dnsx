@@ -21,6 +21,7 @@ def parse_results(results: Dict):
     Yields:
         Record entry.
     """
-    for key, value in results.items():
-        if key in RECORDS:
+    for key in RECORDS:
+        value = results.get(key)
+        if value is not None:
             yield Record(record=key, value=value)
