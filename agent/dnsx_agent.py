@@ -10,7 +10,6 @@ from typing import Dict, List
 from ostorlab.agent import agent, definitions as agent_definitions
 from ostorlab.agent.mixins import agent_persist_mixin as persist_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
-from ostorlab.agent import agent
 from ostorlab.agent import message as m
 
 from agent import result_parser
