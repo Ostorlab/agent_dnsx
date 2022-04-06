@@ -53,6 +53,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
     def _emit_results(self, domain: str, results: Dict) -> None:
         """Parses results and emits records."""
         for record in result_parser.parse_results(results):
+            logger.info('emitting result for %s', record)
             self.emit(selector='v3.asset.domain_name.dns_record',
                       data={'name': domain, 'record': record.record, 'values': record.value})
 
@@ -61,7 +62,8 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         with tempfile.NamedTemporaryFile() as input_domain,\
                 tempfile.NamedTemporaryFile() as output_domain:
             input_domain.write(domain.encode())
-            command = self._prepare_command(pathlib.Path(input_domain.name).name, pathlib.Path(output_domain.name).name)
+            input_domain.flush()
+            command = self._prepare_command(str(pathlib.Path(input_domain.name)), str(pathlib.Path(output_domain.name)))
             logger.info('running command %s', command)
             subprocess.run(command, check=False)
             return json.load(output_domain)
@@ -69,7 +71,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
     def _prepare_command(self, domain_file, output) -> List[str]:
         """Prepare dnsx command."""
         return ['dnsx', '-silent', '-a', '-aaaa', '-cname', '-ns',
-                '-txt', '-ptr', '-mx', '-soa', '-resp', '-json', output, '-l', domain_file]
+                '-txt', '-ptr', '-mx', '-soa', '-resp', '-json', '-o', output, '-l', domain_file]
 
 
 if __name__ == '__main__':
