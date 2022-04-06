@@ -7,6 +7,9 @@ import json
 from rich import logging as rich_logging
 from typing import Dict, List
 
+from ostorlab.agent import agent, definitions as agent_definitions
+from ostorlab.agent.mixins import agent_persist_mixin as persist_mixin
+from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import agent
 from ostorlab.agent import message as m
 
@@ -25,8 +28,13 @@ logger = logging.getLogger(__name__)
 OUTPUT_SUFFIX = '.json'
 
 
-class DnsxAgent(agent.Agent):
+class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
     """dnsx open source Agent implementation."""
+
+    def __init__(self, agent_definition: agent_definitions.AgentDefinition,
+                 agent_settings: runtime_definitions.AgentSettings) -> None:
+        agent.Agent.__init__(self, agent_definition, agent_settings)
+        persist_mixin.AgentPersistMixin.__init__(self, agent_settings)
 
     def process(self, message: m.Message) -> None:
         """Trigger dnsx scan and emits findings
@@ -36,13 +44,17 @@ class DnsxAgent(agent.Agent):
         """
         domain = message.data['name']
         logger.info('scanning domain %s', domain)
+        if not self.set_add('agent_dnsx_asset', domain):
+            logger.info('target %s/ was processed before, exiting', domain)
+            return
+
         results = self._run_dnsx(domain)
         self._emit_results(domain, results)
 
     def _emit_results(self, domain: str, results: Dict) -> None:
         """Parses results and emits records."""
         for record in result_parser.parse_results(results):
-            self.emit(selector='v3.asset.domain_name',
+            self.emit(selector='v3.asset.domain_name.dns_record',
                       data={'name': domain, 'record': record.record, 'value': record.value})
             if record.record == 'cname':
                 for d in record.value:
@@ -50,13 +62,13 @@ class DnsxAgent(agent.Agent):
 
     def _run_dnsx(self, domain: str):
         """Run dnsx and returns the results."""
-        with tempfile.NamedTemporaryFile(suffix=OUTPUT_SUFFIX) as f,\
-                tempfile.NamedTemporaryFile(suffix=OUTPUT_SUFFIX) as t:
-            f.write(domain.encode())
-            command = self._prepare_command(pathlib.Path(f.name).name, pathlib.Path(t.name).name)
+        with tempfile.NamedTemporaryFile() as input_domain,\
+                tempfile.NamedTemporaryFile() as output_domain:
+            input_domain.write(domain.encode())
+            command = self._prepare_command(pathlib.Path(input_domain.name).name, pathlib.Path(output_domain.name).name)
             logger.info('running command %s', command)
             subprocess.run(command, check=False)
-            return json.load(t)
+            return json.load(output_domain)
 
     def _prepare_command(self, domain_file, output) -> List[str]:
         """Prepare dnsx command."""

@@ -3,7 +3,7 @@ import pathlib
 import json
 
 
-def testAgentZap_whenDomainNameAsset_RunScan(scan_message, test_agent, mocker, agent_mock):
+def testAgentDnsx_whenDomainNameAsset_RunScan(scan_message, test_agent, mocker, agent_mock):
     """Tests running the agent and emitting vulnerabilities."""
     with (pathlib.Path(__file__).parent / 'dnsx-test-output.json').open('r', encoding='utf-8') as o:
         mock_command_run = mocker.patch('subprocess.run', return_value=None)
