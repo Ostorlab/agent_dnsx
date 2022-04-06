@@ -8,6 +8,7 @@ def testAgentDnsx_whenDomainNameAsset_RunScan(scan_message, test_agent, mocker, 
     with (pathlib.Path(__file__).parent / 'dnsx-test-output.json').open('r', encoding='utf-8') as o:
         mock_command_run = mocker.patch('subprocess.run', return_value=None)
         mocker.patch('json.load', return_value=json.load(o))
+        mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_add', return_value=True)
         test_agent.start()
         test_agent.process(scan_message)
         mock_command_run.assert_called_once()

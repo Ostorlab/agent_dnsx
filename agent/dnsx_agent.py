@@ -54,7 +54,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         """Parses results and emits records."""
         for record in result_parser.parse_results(results):
             self.emit(selector='v3.asset.domain_name.dns_record',
-                      data={'name': domain, 'record': record.record, 'value': record.value})
+                      data={'name': domain, 'record': record.record, 'values': record.value})
 
     def _run_dnsx(self, domain: str):
         """Run dnsx and returns the results."""

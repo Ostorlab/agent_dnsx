@@ -28,7 +28,7 @@ def test_agent():
             key='agent/ostorlab/dnsx',
             bus_url='NA',
             bus_exchange_topic='NA',
-            redis_url='redis://guest:guest@localhost:6379',
+            redis_url='redis://redis',
             args=[],
             healthcheck_port=5301)
         return dnsx_agent.DnsxAgent(definition, settings)
