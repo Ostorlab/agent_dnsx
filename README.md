@@ -9,7 +9,7 @@
 _dnsx agent is a fast and multi-purpose DNS toolkit._
 
 <p align="center">
-<img src="https://github.com/Ostorlab/agent_dnsx/blob/main/images/logo.png" alt="agent-dnsx" />
+<img src="https://github.com/Ostorlab/agent_dnsx/blob/main/images/cover.png" alt="agent-dnsx" />
 </p>
 
 This repository is an implementation of [Ostorlab Agent](https://pypi.org/project/ostorlab/) for [dnsx](https://github.com/projectdiscovery/dnsx) DNS toolkitby by ProjectDiscovery.
