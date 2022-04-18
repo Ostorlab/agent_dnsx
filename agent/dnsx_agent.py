@@ -66,7 +66,10 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             command = self._prepare_command(str(pathlib.Path(input_domain.name)), str(pathlib.Path(output_domain.name)))
             logger.info('running command %s', command)
             subprocess.run(command, check=False)
-            return json.load(output_domain)
+            try:
+                return json.load(output_domain)
+            except json.JSONDecodeError:
+                logger.info('Empty result file for domain %s', domain)
 
     def _prepare_command(self, domain_file, output) -> List[str]:
         """Prepare dnsx command."""
