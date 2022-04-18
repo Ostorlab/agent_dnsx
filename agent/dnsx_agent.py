@@ -70,7 +70,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             try:
                 return json.load(output_domain)
             except json.JSONDecodeError:
-                logger.info('Empty result file for domain %s', domain)
+                logger.warning('Empty result file for domain %s', domain)
 
     def _prepare_command(self, domain_file, output) -> List[str]:
         """Prepare dnsx command."""
