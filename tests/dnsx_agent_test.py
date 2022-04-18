@@ -16,7 +16,7 @@ def testAgentDnsx_whenDomainNameAsset_RunScan(scan_message, test_agent, mocker, 
         assert len(agent_mock) > 0
         assert agent_mock[0].selector == 'v3.asset.domain_name.dns_record'
 
-def testAgentDnsx_whenDomainNameNotExist_EmptyResult(scan_message, test_agent, mocker, agent_mock):
+def testAgentDnsx_whenDomainNameNotExist_emptyResult(scan_message, test_agent, mocker, agent_mock):
     """Tests running the agent when dcommand does not generate results."""
     mock_command_run = mocker.patch('subprocess.run', return_value=None)
     mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_add', return_value=True)
