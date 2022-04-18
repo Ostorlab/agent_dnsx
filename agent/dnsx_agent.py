@@ -48,7 +48,8 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             return
 
         results = self._run_dnsx(domain)
-        self._emit_results(domain, results)
+        if results is not None:
+            self._emit_results(domain, results)
 
     def _emit_results(self, domain: str, results: Dict) -> None:
         """Parses results and emits records."""
@@ -66,7 +67,10 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             command = self._prepare_command(str(pathlib.Path(input_domain.name)), str(pathlib.Path(output_domain.name)))
             logger.info('running command %s', command)
             subprocess.run(command, check=False)
-            return json.load(output_domain)
+            try:
+                return json.load(output_domain)
+            except json.JSONDecodeError:
+                logger.warning('Empty result file for domain %s', domain)
 
     def _prepare_command(self, domain_file, output) -> List[str]:
         """Prepare dnsx command."""
