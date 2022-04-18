@@ -48,7 +48,8 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             return
 
         results = self._run_dnsx(domain)
-        self._emit_results(domain, results)
+        if results is not None:
+            self._emit_results(domain, results)
 
     def _emit_results(self, domain: str, results: Dict) -> None:
         """Parses results and emits records."""
