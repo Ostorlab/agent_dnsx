@@ -1,6 +1,6 @@
 kind: Agent
 name: dnsx # Agent name, must be unique by organisation to be published on the store.
-version: 0.1.0
+version: 0.2.0
 image: images/cover.png
 description: |
   This repository is an implementation of [Ostorlab Agent](https://pypi.org/project/ostorlab/) for [dnsx](https://github.com/projectdiscovery/dnsx) DNS toolkitby by ProjectDiscovery.
@@ -51,3 +51,7 @@ out_selectors:
   - v3.asset.domain_name.dns_record
 docker_file_path : Dockerfile # Dockerfile path for automated release build.
 docker_build_root : . # Docker build dir for automated release build.
+args:
+  - name: "wordlist"
+    type: "string"
+    description: "Path to wordlist to brute force DNS, the agent ships with a 100, 2M and 9M subdomains list at /app/agent/wordlists/[9m,2m,100]_list.txt"

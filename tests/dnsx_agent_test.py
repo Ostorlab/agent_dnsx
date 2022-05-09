@@ -3,26 +3,49 @@ import pathlib
 import json
 
 
-def testAgentDnsx_whenDomainNameAsset_RunScan(scan_message, test_agent1, mocker, agent_mock):
+def testAgentDnsx_whenDomainNameAssetWithWordlist_RunScan(
+        scan_message, test_agent1, agent_mock, agent_persist_mock, fp):
     """Tests running the agent and emitting vulnerabilities."""
-    with (pathlib.Path(__file__).parent / 'dnsx-test-output.json').open('r', encoding='utf-8') as o:
-        mock_command_run = mocker.patch('subprocess.run', return_value=None)
-        mocker.patch('json.load', return_value=json.load(o))
-        mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_add', return_value=True)
-        test_agent1.start()
-        test_agent1.process(scan_message)
-        mock_command_run.assert_called_once()
-        assert len(agent_mock) > 0
-        assert agent_mock[0].selector == 'v3.asset.domain_name.dns_record'
+    fp.register(
+        ['dnsx', '-silent', '-a', '-aaaa', '-cname', '-ns', '-txt', '-ptr', '-mx', '-soa', '-resp', '-json', '-l',
+         fp.any(max=1)],
+        stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
+               '"a":["164.90.232.184","3.67.255.218"],'
+               '"aaaa":["2a05:d014:275:cb00:ec0d:12e2:df27:aa60","2a03:b0c0:3:d0::d23:4001"],'
+               '"cname":["ostorlab-public-website.netlify.com"],"soa":["dns1.p04.nsone.net","hostmaster.nsone.net"],'
+               '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}')
+    fp.register(
+        'dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -resp -json -d ostorlab.co -w agent/wordlists/100_list.txt',
+        stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
+               '"a":["164.90.232.184","3.67.255.218"],'
+               '"aaaa":["2a05:d014:275:cb00:ec0d:12e2:df27:aa60","2a03:b0c0:3:d0::d23:4001"],'
+               '"cname":["ostorlab-public-website.netlify.com"],"soa":["dns1.p04.nsone.net","hostmaster.nsone.net"],'
+               '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}')
+    test_agent1.start()
+    test_agent1.process(scan_message)
+    assert len(agent_mock) > 0
+    assert agent_mock[0].selector == 'v3.asset.domain_name.dns_record'
 
 
-def testAgentDnsx_whenDomainNameNotExist_emptyResult(scan_message, test_agent2, mocker, agent_mock):
-    """Tests running the agent when dcommand does not generate results."""
-    mock_command_run = mocker.patch('subprocess.run', return_value=None)
-    mocker.patch('ostorlab.agent.mixins.agent_persist_mixin.AgentPersistMixin.set_add', return_value=True)
-    emit_mock = mocker.patch('ostorlab.agent.agent.Agent.emit', return_value=None)
+def testAgentDnsx_whenDomainNameAsset_RunScan(scan_message, test_agent2, agent_mock, agent_persist_mock, fp):
+    """Tests running the agent and emitting vulnerabilities."""
+    fp.register(
+        ['dnsx', '-silent', '-a', '-aaaa', '-cname', '-ns', '-txt', '-ptr', '-mx', '-soa', '-resp', '-json', '-l',
+         fp.any(max=1)],
+        stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
+               '"a":["164.90.232.184","3.67.255.218"],'
+               '"aaaa":["2a05:d014:275:cb00:ec0d:12e2:df27:aa60","2a03:b0c0:3:d0::d23:4001"],'
+               '"cname":["ostorlab-public-website.netlify.com"],"soa":["dns1.p04.nsone.net","hostmaster.nsone.net"],'
+               '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}')
+    fp.register(
+        'dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -resp -json -d ostorlab.co '
+        '-w agent/wordlists/100_list.txt',
+        stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
+               '"a":["164.90.232.184","3.67.255.218"],'
+               '"aaaa":["2a05:d014:275:cb00:ec0d:12e2:df27:aa60","2a03:b0c0:3:d0::d23:4001"],'
+               '"cname":["ostorlab-public-website.netlify.com"],"soa":["dns1.p04.nsone.net","hostmaster.nsone.net"],'
+               '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}')
     test_agent2.start()
     test_agent2.process(scan_message)
-    mock_command_run.assert_called_once()
-    assert len(agent_mock) == 0
-    emit_mock.assert_not_called()
+    assert len(agent_mock) > 0
+    assert agent_mock[0].selector == 'v3.asset.domain_name.dns_record'
