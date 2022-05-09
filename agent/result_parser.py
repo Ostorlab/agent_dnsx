@@ -1,6 +1,6 @@
 """Module to parse dnsx json results."""
 import dataclasses
-from typing import Dict, List
+from typing import List
 
 RECORDS = ['a', 'aaaa', 'cname', 'ns', 'txt', 'ptr', 'mx', 'soa']
 
