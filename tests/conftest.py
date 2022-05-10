@@ -1,10 +1,12 @@
 """Pytest fixture for the Dnsx agent."""
+import json
 import pathlib
 
 import pytest
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent import message
 from ostorlab.runtimes import definitions as runtime_definitions
+from ostorlab.utils import defintions as utils_definitions
 
 from agent import dnsx_agent
 
@@ -15,7 +17,7 @@ def scan_message():
     """
     selector = 'v3.asset.domain_name'
     msg_data = {
-        'name': 'test.ostorlab.co',
+        'name': 'ostorlab.co',
     }
     return message.Message.from_data(selector, data=msg_data)
 
@@ -29,7 +31,13 @@ def test_agent1():
             bus_url='NA',
             bus_exchange_topic='NA',
             redis_url='redis://redis',
-            args=[],
+            args=[
+                utils_definitions.Arg(**{
+                    'name': 'wordlist',
+                    'type': 'string',
+                    'value': json.dumps('agent/wordlists/100_list.txt').encode()
+                }),
+            ],
             healthcheck_port=5301)
         return dnsx_agent.DnsxAgent(definition, settings)
 

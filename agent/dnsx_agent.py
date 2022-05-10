@@ -2,10 +2,9 @@
 import logging
 import subprocess
 import tempfile
-import pathlib
 import json
 from rich import logging as rich_logging
-from typing import Dict, List
+from typing import List, Optional
 
 from ostorlab.agent import agent, definitions as agent_definitions
 from ostorlab.agent.mixins import agent_persist_mixin as persist_mixin
@@ -13,7 +12,6 @@ from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent import message as m
 
 from agent import result_parser
-
 
 logging.basicConfig(
     format='%(message)s',
@@ -42,40 +40,71 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             message:
         """
         domain = message.data['name']
+        wordlist = self.args.get('wordlist')
         logger.info('scanning domain %s', domain)
-        if not self.set_add('agent_dnsx_asset', domain):
+        if not self.set_add(b'agent_dnsx_asset', domain):
             logger.info('target %s/ was processed before, exiting', domain)
             return
 
-        results = self._run_dnsx(domain)
+        results = self._run_dnsx_resolve(domain)
         if results is not None:
             self._emit_results(domain, results)
 
-    def _emit_results(self, domain: str, results: Dict) -> None:
+        if wordlist is not None:
+            results = self._run_dnsx(domain, wordlist)
+            if results is not None:
+                self._emit_results(domain, results)
+
+    def _emit_results(self, domain: str, results: List) -> None:
         """Parses results and emits records."""
         for record in result_parser.parse_results(results):
             logger.info('emitting result for %s', record)
             self.emit(selector='v3.asset.domain_name.dns_record',
                       data={'name': domain, 'record': record.record, 'values': record.value})
 
-    def _run_dnsx(self, domain: str):
+    def _run_dnsx(self, domain: str, wordlist: Optional[str] = None):
         """Run dnsx and returns the results."""
-        with tempfile.NamedTemporaryFile() as input_domain,\
-                tempfile.NamedTemporaryFile() as output_domain:
+        command = self._prepare_command(domain, wordlist)
+        logger.info('running command %s', command)
+        result = subprocess.run(command, capture_output=True, check=False)
+        if result.returncode == 0 and result.stdout != b'':
+            return [json.loads(l) for l in result.stdout.decode().split('\n') if l != '']
+        else:
+            logger.warning('Empty result file for domain %s', domain)
+
+    def _prepare_command(self, domain, wordlist: Optional[str]) -> List[str]:
+        """Prepare dnsx command."""
+        command = ['dnsx',
+                   '-silent',
+                   '-a', '-aaaa', '-cname', '-ns', '-txt', '-ptr', '-mx', '-soa', '-resp',
+                   '-json',
+                   '-d', domain]
+
+        if wordlist is not None:
+            command.extend(['-w', wordlist])
+        return command
+
+    def _run_dnsx_resolve(self, domain: str):
+        """Run dnsx and returns the results."""
+        with tempfile.NamedTemporaryFile() as input_domain:
             input_domain.write(domain.encode())
             input_domain.flush()
-            command = self._prepare_command(str(pathlib.Path(input_domain.name)), str(pathlib.Path(output_domain.name)))
+            command = self._prepare_command_resolve(input_domain.name)
             logger.info('running command %s', command)
-            subprocess.run(command, check=False)
-            try:
-                return json.load(output_domain)
-            except json.JSONDecodeError:
+            result = subprocess.run(command, capture_output=True, check=False)
+            if result.returncode == 0 and result.stdout != b'':
+                return [json.loads(l) for l in result.stdout.decode().split('\n') if l != '']
+            else:
                 logger.warning('Empty result file for domain %s', domain)
 
-    def _prepare_command(self, domain_file, output) -> List[str]:
+    def _prepare_command_resolve(self, domain_file) -> List[str]:
         """Prepare dnsx command."""
-        return ['dnsx', '-silent', '-a', '-aaaa', '-cname', '-ns',
-                '-txt', '-ptr', '-mx', '-soa', '-resp', '-json', '-o', output, '-l', domain_file]
+        return ['dnsx',
+                '-silent',
+                '-a', '-aaaa', '-cname', '-ns', '-txt', '-ptr', '-mx', '-soa', '-resp',
+                '-json',
+                '-l', domain_file]
+
 
 
 if __name__ == '__main__':
