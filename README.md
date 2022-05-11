@@ -53,4 +53,5 @@ This repository is an implementation of [Ostorlab Agent](https://pypi.org/projec
       ostorlab scan run --agent agent/[ORGANIZATION]/subfinder --agent agent/[ORGANIZATION]/dnsx  domain-name your-domain.com
 
   ## License
-  [Apache](./LICENSE)license: Apache-2.0
+
+  License: [Apache-2.0](./LICENSE)
