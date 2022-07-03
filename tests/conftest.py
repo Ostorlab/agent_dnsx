@@ -72,5 +72,5 @@ def test_agent3():
                 }),
                 utils_definitions.Arg(name='max_subdomains', type='int', value=json.dumps(1).encode()),
             ],
-            healthcheck_port=5301)
+            healthcheck_port=5303)
         return dnsx_agent.DnsxAgent(definition, settings)
