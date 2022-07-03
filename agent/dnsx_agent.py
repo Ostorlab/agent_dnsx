@@ -57,10 +57,16 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
 
     def _emit_results(self, domain: str, results: List) -> None:
         """Parses results and emits records."""
+
+        counter = 0
         for record in result_parser.parse_results(results):
-            logger.info('emitting result for %s', record)
-            self.emit(selector='v3.asset.domain_name.dns_record',
-                      data={'name': domain, 'record': record.record, 'values': record.value})
+            if self.args.get('max_subdomains') is not None and counter > self.args.get('max_subdomains'):
+                break
+            else:
+                logger.info('emitting result for %s', record)
+                self.emit(selector='v3.asset.domain_name.dns_record',
+                          data={'name': domain, 'record': record.record, 'values': record.value})
+                counter += 1
 
     def _run_dnsx(self, domain: str, wordlist: Optional[str] = None):
         """Run dnsx and returns the results."""

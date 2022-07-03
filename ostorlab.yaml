@@ -55,3 +55,6 @@ args:
   - name: "wordlist"
     type: "string"
     description: "Path to wordlist to brute force DNS, the agent ships with a 100, 2M and 9M subdomains list at /app/agent/wordlists/[2m,10k,100]_list.txt"
+  - name: "max_subdomains"
+    type: "number"
+    description: "Maximum number of subdomains to return"
