@@ -1,4 +1,4 @@
-FROM python:3.8-bullseye as base
+FROM python:3.10-bullseye as base
 FROM base as builder
 RUN mkdir /install
 WORKDIR /install
