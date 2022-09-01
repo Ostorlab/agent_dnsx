@@ -9,7 +9,7 @@ from typing import List, Optional
 from ostorlab.agent import agent, definitions as agent_definitions
 from ostorlab.agent.mixins import agent_persist_mixin as persist_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
-from ostorlab.agent import message as m
+from ostorlab.agent.message import message as m
 
 from agent import result_parser
 
