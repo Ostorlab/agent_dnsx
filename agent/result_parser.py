@@ -2,12 +2,13 @@
 import dataclasses
 from typing import List
 
-RECORDS = ['a', 'aaaa', 'cname', 'ns', 'txt', 'ptr', 'mx', 'soa']
+RECORDS = ["a", "aaaa", "cname", "ns", "txt", "ptr", "mx", "soa"]
 
 
 @dataclasses.dataclass
 class Record:
     """Record dataclass to pass to the emit method."""
+
     record: str
     value: List[str]
 

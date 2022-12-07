@@ -14,22 +14,25 @@ from ostorlab.agent.message import message as m
 from agent import result_parser
 
 logging.basicConfig(
-    format='%(message)s',
-    datefmt='[%X]',
+    format="%(message)s",
+    datefmt="[%X]",
     handlers=[rich_logging.RichHandler(rich_tracebacks=True)],
-    level='INFO',
-    force=True
+    level="INFO",
+    force=True,
 )
 logger = logging.getLogger(__name__)
 
-OUTPUT_SUFFIX = '.json'
+OUTPUT_SUFFIX = ".json"
 
 
 class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
     """dnsx open source Agent implementation."""
 
-    def __init__(self, agent_definition: agent_definitions.AgentDefinition,
-                 agent_settings: runtime_definitions.AgentSettings) -> None:
+    def __init__(
+        self,
+        agent_definition: agent_definitions.AgentDefinition,
+        agent_settings: runtime_definitions.AgentSettings,
+    ) -> None:
         agent.Agent.__init__(self, agent_definition, agent_settings)
         persist_mixin.AgentPersistMixin.__init__(self, agent_settings)
 
@@ -39,11 +42,11 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         Args:
             message:
         """
-        domain = message.data['name']
-        wordlist = self.args.get('wordlist')
-        logger.info('scanning domain %s', domain)
-        if not self.set_add(b'agent_dnsx_asset', domain):
-            logger.info('target %s/ was processed before, exiting', domain)
+        domain = message.data["name"]
+        wordlist = self.args.get("wordlist")
+        logger.info("scanning domain %s", domain)
+        if not self.set_add(b"agent_dnsx_asset", domain):
+            logger.info("target %s/ was processed before, exiting", domain)
             return
 
         results = self._run_dnsx_resolve(domain)
@@ -60,34 +63,55 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
 
         counter = 0
         for record in result_parser.parse_results(results):
-            if self.args.get('max_subdomains') is not None and counter > self.args.get('max_subdomains'):
+            if self.args.get("max_subdomains") is not None and counter > self.args.get(
+                "max_subdomains"
+            ):
                 break
             else:
-                logger.info('emitting result for %s', record)
-                self.emit(selector='v3.asset.domain_name.dns_record',
-                          data={'name': domain, 'record': record.record, 'values': record.value})
+                logger.info("emitting result for %s", record)
+                self.emit(
+                    selector="v3.asset.domain_name.dns_record",
+                    data={
+                        "name": domain,
+                        "record": record.record,
+                        "values": record.value,
+                    },
+                )
                 counter += 1
 
     def _run_dnsx(self, domain: str, wordlist: Optional[str] = None):
         """Run dnsx and returns the results."""
         command = self._prepare_command(domain, wordlist)
-        logger.info('running command %s', command)
+        logger.info("running command %s", command)
         result = subprocess.run(command, capture_output=True, check=False)
-        if result.returncode == 0 and result.stdout != b'':
-            return [json.loads(l) for l in result.stdout.decode().split('\n') if l != '']
+        if result.returncode == 0 and result.stdout != b"":
+            return [
+                json.loads(l) for l in result.stdout.decode().split("\n") if l != ""
+            ]
         else:
-            logger.warning('Empty result file for domain %s', domain)
+            logger.warning("Empty result file for domain %s", domain)
 
     def _prepare_command(self, domain, wordlist: Optional[str]) -> List[str]:
         """Prepare dnsx command."""
-        command = ['dnsx',
-                   '-silent',
-                   '-a', '-aaaa', '-cname', '-ns', '-txt', '-ptr', '-mx', '-soa', '-resp',
-                   '-json',
-                   '-d', domain]
+        command = [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-resp",
+            "-json",
+            "-d",
+            domain,
+        ]
 
         if wordlist is not None:
-            command.extend(['-w', wordlist])
+            command.extend(["-w", wordlist])
         return command
 
     def _run_dnsx_resolve(self, domain: str):
@@ -96,23 +120,35 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             input_domain.write(domain.encode())
             input_domain.flush()
             command = self._prepare_command_resolve(input_domain.name)
-            logger.info('running command %s', command)
+            logger.info("running command %s", command)
             result = subprocess.run(command, capture_output=True, check=False)
-            if result.returncode == 0 and result.stdout != b'':
-                return [json.loads(l) for l in result.stdout.decode().split('\n') if l != '']
+            if result.returncode == 0 and result.stdout != b"":
+                return [
+                    json.loads(l) for l in result.stdout.decode().split("\n") if l != ""
+                ]
             else:
-                logger.warning('Empty result file for domain %s', domain)
+                logger.warning("Empty result file for domain %s", domain)
 
     def _prepare_command_resolve(self, domain_file) -> List[str]:
         """Prepare dnsx command."""
-        return ['dnsx',
-                '-silent',
-                '-a', '-aaaa', '-cname', '-ns', '-txt', '-ptr', '-mx', '-soa', '-resp',
-                '-json',
-                '-l', domain_file]
+        return [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-resp",
+            "-json",
+            "-l",
+            domain_file,
+        ]
 
 
-
-if __name__ == '__main__':
-    logger.info('starting agent ...')
+if __name__ == "__main__":
+    logger.info("starting agent ...")
     DnsxAgent.main()
