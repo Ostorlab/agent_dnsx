@@ -32,10 +32,10 @@ jobs:
         python -m pip install -r requirement.txt
         python -m pip install -r tests/test-requirement.txt
     - name: Running Black.
-        uses: psf/black@stable
-        with:
-          options: "--check"
+      uses: psf/black@stable
+      with:
+        options: "--check"
     - name: Running linter.
       run: |
-        pylint pylint_quotes --rcfile=.pylintrc --ignore=tests/ agent/
-        pylint pylint_quotes --rcfile=.pylintrc -d C0103,W0613 tests/
+        pylint --rcfile=.pylintrc --ignore=tests/ agent/
+        pylint --rcfile=.pylintrc -d C0103,W0613 tests/
