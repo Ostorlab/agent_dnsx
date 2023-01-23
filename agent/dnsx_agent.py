@@ -3,15 +3,17 @@ import logging
 import subprocess
 import tempfile
 import json
-from rich import logging as rich_logging
+import re
 from typing import List, Optional
 
+from rich import logging as rich_logging
 from ostorlab.agent import agent, definitions as agent_definitions
 from ostorlab.agent.mixins import agent_persist_mixin as persist_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.agent.message import message as m
 
 from agent import result_parser
+
 
 logging.basicConfig(
     format="%(message)s",
@@ -35,6 +37,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
     ) -> None:
         agent.Agent.__init__(self, agent_definition, agent_settings)
         persist_mixin.AgentPersistMixin.__init__(self, agent_settings)
+        self._scope_domain_regex: Optional[str] = self.args.get("scope_domain_regex")
 
     def process(self, message: m.Message) -> None:
         """Trigger dnsx scan and emits findings
@@ -48,6 +51,8 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         if not self.set_add(b"agent_dnsx_asset", domain):
             logger.info("target %s/ was processed before, exiting", domain)
             return
+        if self._is_domain_in_scope(self._scope_domain_regex, domain) is False:
+            return
 
         results = self._run_dnsx_resolve(domain)
         if results is not None:
@@ -57,6 +62,23 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             results = self._run_dnsx(domain, wordlist)
             if results is not None:
                 self._emit_results(domain, results)
+
+    def _is_domain_in_scope(
+        self, scope_domain_regex: Optional[str], domain: str
+    ) -> bool:
+        """Check if a domain is in the scan scope with a regular expression."""
+        if scope_domain_regex is None:
+            return True
+        domain_in_scope = re.match(scope_domain_regex, domain) is not None
+        if not domain_in_scope:
+            logger.warning(
+                "Domain %s is not in scanning scope %s",
+                domain,
+                scope_domain_regex,
+            )
+            return False
+        else:
+            return False
 
     def _emit_results(self, domain: str, results: List) -> None:
         """Parses results and emits records."""

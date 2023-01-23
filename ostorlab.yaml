@@ -58,3 +58,6 @@ args:
   - name: "max_subdomains"
     type: "number"
     description: "Maximum number of subdomains to return"
+  - name: "scope_domain_regex"
+    type: "string"
+    description: "Regular expression to define domain scanning scope."
