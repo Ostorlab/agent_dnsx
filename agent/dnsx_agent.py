@@ -51,7 +51,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         if not self.set_add(b"agent_dnsx_asset", domain):
             logger.info("target %s/ was processed before, exiting", domain)
             return
-        if self._is_domain_in_scope(self._scope_domain_regex, domain) is False:
+        if self._is_domain_in_scope(domain) is False:
             return
 
         results = self._run_dnsx_resolve(domain)
@@ -63,18 +63,16 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             if results is not None:
                 self._emit_results(domain, results)
 
-    def _is_domain_in_scope(
-        self, scope_domain_regex: Optional[str], domain: str
-    ) -> bool:
+    def _is_domain_in_scope(self, domain: str) -> bool:
         """Check if a domain is in the scan scope with a regular expression."""
-        if scope_domain_regex is None:
+        if self._scope_domain_regex is None:
             return True
-        domain_in_scope = re.match(scope_domain_regex, domain)
+        domain_in_scope = re.match(self._scope_domain_regex, domain)
         if domain_in_scope is None:
             logger.warning(
                 "Domain %s is not in scanning scope %s",
                 domain,
-                scope_domain_regex,
+                self._scope_domain_regex,
             )
             return False
         else:
