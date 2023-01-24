@@ -1,6 +1,7 @@
 """Pytest fixture for the Dnsx agent."""
 import json
 import pathlib
+from typing import List
 
 import pytest
 from ostorlab.agent import definitions as agent_definitions
@@ -81,5 +82,28 @@ def test_agent3():
                 ),
             ],
             healthcheck_port=5303,
+        )
+        return dnsx_agent.DnsxAgent(definition, settings)
+
+
+@pytest.fixture
+def dnsx_agent_with_domain_scope_arg(agent_mock: List[message.Message]):
+    """DNSX Agent fixture with domain scope argument for testing purposes."""
+    del agent_mock
+    with (pathlib.Path(__file__).parent.parent / "ostorlab.yaml").open() as yaml_o:
+        definition = agent_definitions.AgentDefinition.from_yaml(yaml_o)
+        settings = runtime_definitions.AgentSettings(
+            key="agent/ostorlab/dnsx",
+            bus_url="NA",
+            bus_exchange_topic="NA",
+            redis_url="redis://redis",
+            args=[
+                utils_definitions.Arg(
+                    name="scope_domain_regex",
+                    type="string",
+                    value=json.dumps(".*ostorlab.co").encode(),
+                ),
+            ],
+            healthcheck_port=5301,
         )
         return dnsx_agent.DnsxAgent(definition, settings)
