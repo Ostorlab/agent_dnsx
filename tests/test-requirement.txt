@@ -4,3 +4,4 @@ pytest
 pytest-cov
 pytest-mock
 pytest-subprocess
+# Typing requirements. 
