@@ -5,7 +5,7 @@ WORKDIR /install
 COPY requirement.txt /requirement.txt
 RUN pip install --prefix=/install -r /requirement.txt
 
-FROM golang:1.18-bullseye AS go-build-env
+FROM golang:1.19-alpine AS go-build-env
 RUN go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
 
 FROM base
