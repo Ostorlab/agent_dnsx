@@ -1,6 +1,6 @@
 kind: Agent
 name: dnsx # Agent name, must be unique by organisation to be published on the store.
-version: 0.2.8
+version: 0.2.9
 image: images/cover.png
 description: |
   This repository is an implementation of [Ostorlab Agent](https://pypi.org/project/ostorlab/) for [dnsx](https://github.com/projectdiscovery/dnsx) DNS toolkitby by ProjectDiscovery.
