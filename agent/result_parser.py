@@ -2,7 +2,7 @@
 import dataclasses
 from typing import List
 
-RECORDS = ["a", "aaaa", "cname", "ns", "txt", "ptr", "mx", "soa"]
+RECORDS = ["a", "aaaa", "cname", "ns", "txt", "ptr", "mx"]
 
 
 @dataclasses.dataclass
