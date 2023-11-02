@@ -1,4 +1,4 @@
-FROM python:3.10-bullseye as base
+FROM python:3.11-bullseye as base
 FROM base as builder
 RUN mkdir /install
 WORKDIR /install
@@ -16,4 +16,4 @@ ENV PYTHONPATH=/app
 COPY agent /app/agent
 COPY ostorlab.yaml /app/agent/ostorlab.yaml
 WORKDIR /app
-CMD ["python3", "/app/agent/dnsx_agent.py"]
+CMD ["python3.11", "/app/agent/dnsx_agent.py"]
