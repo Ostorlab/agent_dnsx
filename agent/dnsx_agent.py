@@ -106,7 +106,9 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         result = subprocess.run(command, capture_output=True, check=False)
         if result.returncode == 0 and result.stdout != b"":
             return [
-                json.loads(l) for l in result.stdout.decode().split("\n") if l != ""
+                json.loads(l)
+                for l in result.stdout.decode().split("\n")  # noqa: E741
+                if l != ""  # noqa: E741
             ]
         else:
             logger.warning("Empty result file for domain %s", domain)
@@ -143,7 +145,9 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             result = subprocess.run(command, capture_output=True, check=False)
             if result.returncode == 0 and result.stdout != b"":
                 return [
-                    json.loads(l) for l in result.stdout.decode().split("\n") if l != ""
+                    json.loads(l)
+                    for l in result.stdout.decode().split("\n")  # noqa: E741
+                    if l != ""  # noqa: E741
                 ]
             else:
                 logger.warning("Empty result file for domain %s", domain)
