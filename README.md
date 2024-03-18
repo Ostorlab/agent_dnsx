@@ -12,25 +12,25 @@ _dnsx agent is a fast and multi-purpose DNS toolkit._
 <img src="https://github.com/Ostorlab/agent_dnsx/blob/main/images/cover.png" alt="agent-dnsx" />
 </p>
 
-This repository is an implementation of [Ostorlab Agent](https://pypi.org/project/ostorlab/) for [dnsx](https://github.com/projectdiscovery/dnsx) DNS toolkitby by ProjectDiscovery.
+This repository is an implementation of [OXO Agent](https://pypi.org/project/ostorlab/) for [dnsx](https://github.com/projectdiscovery/dnsx) DNS toolkitby by ProjectDiscovery.
   ## Getting Started
   The Dnsx Agent works collectively with other agents. It's job is to reverse a subdomain name and send all the identified records to the other agents reponsible for scanning those records.
   To perform your first scan, simply run the following command:
   ```shell
-  ostorlab scan run --install --agent agent/ostorlab/dnsx --agent agent/ostorlab/subfinder domain-name your-domain.com
+  oxo scan run --install --agent agent/ostorlab/dnsx --agent agent/ostorlab/subfinder domain-name your-domain.com
   ```
   This command will download and install agents  `agent/ostorlab/dnsx` & `agent/ostorlab/subfinder` and target the domain  `your-domain`.
   Subfinder Agent will scan for <your-domain>, and sends all identified subdomains, then Dnsx will reverse those subdomains and send the records.
   You can use any Agent expecting <v3.asset.domain_name> as an in-selector, like Nmap, OpenVas, etc.
-  For more information, please refer to the [Ostorlab Documentation](https://github.com/Ostorlab/ostorlab/blob/main/README.md)
+  For more information, please refer to the [OXO Documentation](https://oxo.ostorlab.co/docs)
   ## Usage
-  Agent Dnsx can be installed directly from the ostorlab agent store or built from this repository.
-  ### Install directly from ostorlab agent store
+  Agent Dnsx can be installed directly from the oxo agent store or built from this repository.
+  ### Install directly from oxo agent store
   ```shell
-  ostorlab agent install agent/ostorlab/dnsx
+  oxo agent install agent/ostorlab/dnsx
   ```
   ### Build directly from the repository
-  1. To build the Dnsx agent you need to have [ostorlab](https://pypi.org/project/ostorlab/) installed in your machine. If you have already installed ostorlab, you can skip this step.
+  1. To build the Dnsx agent you need to have [oxo](https://pypi.org/project/ostorlab/) installed in your machine. If you have already installed oxo, you can skip this step.
   ```shell
   pip3 install ostorlab
   ```
@@ -38,19 +38,20 @@ This repository is an implementation of [Ostorlab Agent](https://pypi.org/projec
   ```shell
   git clone https://github.com/Ostorlab/agent_dnsx.git && cd agent_dnsx
   ```
-  3. Build the agent image using ostorlab cli.
+  3. Build the agent image using oxo cli.
   ```shell
-  ostorlab agent build --file=ostorlab.yaml
+  oxo agent build --file=ostorlab.yaml
   ```
   You can pass the optional flag `--organization` to specify your organisation. The organization is empty by default.
   4. Run the agent using on of the following commands:
-    * If you did not specify an organization when building the image:
-      ```shell
-      ostorlab scan run --agent agent//dnsx --agent agent//subfinder domain-name your-domain.com
-      ```
-    * If you specified an organization when building the image:
-      ```shell
-      ostorlab scan run --agent agent/[ORGANIZATION]/subfinder --agent agent/[ORGANIZATION]/dnsx  domain-name your-domain.com
+        * If you did not specify an organization when building the image:
+          ```shell
+          oxo scan run --agent agent//dnsx --agent agent//subfinder domain-name your-domain.com
+          ```
+        * If you specified an organization when building the image:
+          ```shell
+          oxo scan run --agent agent/[ORGANIZATION]/subfinder --agent agent/[ORGANIZATION]/dnsx  domain-name your-domain.com
+          ```
 
   ## License
 

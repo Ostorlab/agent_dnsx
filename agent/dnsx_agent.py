@@ -1,4 +1,5 @@
 """Dnsx Agent implementation"""
+
 import logging
 import subprocess
 import tempfile
