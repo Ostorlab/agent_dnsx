@@ -1,4 +1,5 @@
 """Module to parse dnsx json results."""
+
 import dataclasses
 from typing import List
 

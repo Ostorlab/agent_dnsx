@@ -1,4 +1,5 @@
 """Pytest fixture for the Dnsx agent."""
+
 import json
 import pathlib
 from typing import List

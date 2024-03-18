@@ -1,4 +1,5 @@
 """Unittests for Dnsx agent."""
+
 from typing import List, Dict
 
 import pytest_subprocess
