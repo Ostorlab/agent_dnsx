@@ -1,11 +1,11 @@
-FROM python:3.11-bullseye as base
+FROM python:3.14-bookworm as base
 FROM base as builder
 RUN mkdir /install
 WORKDIR /install
 COPY requirement.txt /requirement.txt
 RUN pip install --prefix=/install -r /requirement.txt
 
-FROM golang:1.22-alpine AS go-build-env
+FROM golang:1.26-alpine AS go-build-env
 RUN go install -v github.com/projectdiscovery/dnsx/cmd/dnsx@latest
 
 FROM base
@@ -16,4 +16,4 @@ ENV PYTHONPATH=/app
 COPY agent /app/agent
 COPY ostorlab.yaml /app/agent/ostorlab.yaml
 WORKDIR /app
-CMD ["python3.11", "/app/agent/dnsx_agent.py"]
+CMD ["python", "/app/agent/dnsx_agent.py"]
