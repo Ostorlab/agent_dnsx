@@ -8,18 +8,6 @@ from ostorlab.agent.message import message
 from agent import dnsx_agent
 
 
-_DNSX_RESOLVERS: str = ",".join(
-    (
-        "1.1.1.1",
-        "1.0.0.1",
-        "8.8.8.8",
-        "8.8.4.4",
-        "9.9.9.9",
-        "149.112.112.112",
-    )
-)
-
-
 def testAgentDnsx_whenDomainNameAssetWithWordlist_runScan(
     scan_message, test_agent1, agent_mock, agent_persist_mock, fp
 ):
@@ -38,7 +26,7 @@ def testAgentDnsx_whenDomainNameAssetWithWordlist_runScan(
             "-resp",
             "-json",
             "-r",
-            _DNSX_RESOLVERS,
+            dnsx_agent._DNSX_RESOLVERS,
             "-l",
             fp.any(max=1),
         ],
@@ -50,7 +38,7 @@ def testAgentDnsx_whenDomainNameAssetWithWordlist_runScan(
     )
     fp.register(
         "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json "
-        f"-r {_DNSX_RESOLVERS} -d ostorlab.co "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
         '"a":["164.90.232.184","3.67.255.218"],'
@@ -84,7 +72,7 @@ def testAgentDnsx_whenDomainNameAsset_runScan(
             "-resp",
             "-json",
             "-r",
-            _DNSX_RESOLVERS,
+            dnsx_agent._DNSX_RESOLVERS,
             "-l",
             fp.any(max=1),
         ],
@@ -96,7 +84,7 @@ def testAgentDnsx_whenDomainNameAsset_runScan(
     )
     fp.register(
         "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json "
-        f"-r {_DNSX_RESOLVERS} -d ostorlab.co "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
         '"a":["164.90.232.184","3.67.255.218"],'
@@ -130,7 +118,7 @@ def testAgentDnsx_whenMaxSubDomainsSet_runScan(
             "-resp",
             "-json",
             "-r",
-            _DNSX_RESOLVERS,
+            dnsx_agent._DNSX_RESOLVERS,
             "-l",
             fp.any(max=1),
         ],
@@ -142,7 +130,7 @@ def testAgentDnsx_whenMaxSubDomainsSet_runScan(
     )
     fp.register(
         "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json "
-        f"-r {_DNSX_RESOLVERS} -d ostorlab.co "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
         '"a":["164.90.232.184","3.67.255.218"],'
@@ -180,7 +168,7 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageInScope_runScan(
             "-resp",
             "-json",
             "-r",
-            _DNSX_RESOLVERS,
+            dnsx_agent._DNSX_RESOLVERS,
             "-l",
             fp.any(max=1),
         ],
@@ -192,7 +180,7 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageInScope_runScan(
     )
     fp.register(
         "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json "
-        f"-r {_DNSX_RESOLVERS} -d ostorlab.co "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
         '"a":["164.90.232.184","3.67.255.218"],'
@@ -233,7 +221,7 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageNotInScope_targetShouldNotBe
             "-resp",
             "-json",
             "-r",
-            _DNSX_RESOLVERS,
+            dnsx_agent._DNSX_RESOLVERS,
             "-l",
             fp.any(max=1),
         ],
@@ -245,7 +233,7 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageNotInScope_targetShouldNotBe
     )
     fp.register(
         "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json "
-        f"-r {_DNSX_RESOLVERS} -d ostorlab.co "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
         '"a":["164.90.232.184","3.67.255.218"],'
