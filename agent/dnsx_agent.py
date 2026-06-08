@@ -26,6 +26,16 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 OUTPUT_SUFFIX = ".json"
+_DNSX_RESOLVERS: str = ",".join(
+    (
+        "1.1.1.1",  # Cloudflare primary.
+        "1.0.0.1",  # Cloudflare secondary.
+        "8.8.8.8",  # Google Public DNS primary.
+        "8.8.4.4",  # Google Public DNS secondary.
+        "9.9.9.9",  # Quad9 primary.
+        "149.112.112.112",  # Quad9 secondary.
+    )
+)
 
 
 class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
@@ -114,9 +124,9 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         else:
             logger.warning("Empty result file for domain %s", domain)
 
-    def _prepare_command(self, domain, wordlist: Optional[str]) -> List[str]:
+    def _prepare_command(self, domain: str, wordlist: str | None) -> list[str]:
         """Prepare dnsx command."""
-        command = [
+        command: list[str] = [
             "dnsx",
             "-silent",
             "-a",
@@ -128,6 +138,8 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             "-mx",
             "-resp",
             "-json",
+            "-r",
+            _DNSX_RESOLVERS,
             "-d",
             domain,
         ]
@@ -153,7 +165,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             else:
                 logger.warning("Empty result file for domain %s", domain)
 
-    def _prepare_command_resolve(self, domain_file) -> List[str]:
+    def _prepare_command_resolve(self, domain_file: str) -> list[str]:
         """Prepare dnsx command."""
         return [
             "dnsx",
@@ -167,6 +179,8 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             "-mx",
             "-resp",
             "-json",
+            "-r",
+            _DNSX_RESOLVERS,
             "-l",
             domain_file,
         ]

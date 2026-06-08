@@ -25,6 +25,8 @@ def testAgentDnsx_whenDomainNameAssetWithWordlist_runScan(
             "-mx",
             "-resp",
             "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
             "-l",
             fp.any(max=1),
         ],
@@ -35,7 +37,8 @@ def testAgentDnsx_whenDomainNameAssetWithWordlist_runScan(
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
     fp.register(
-        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json -d ostorlab.co "
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
         '"a":["164.90.232.184","3.67.255.218"],'
@@ -68,6 +71,8 @@ def testAgentDnsx_whenDomainNameAsset_runScan(
             "-mx",
             "-resp",
             "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
             "-l",
             fp.any(max=1),
         ],
@@ -78,7 +83,8 @@ def testAgentDnsx_whenDomainNameAsset_runScan(
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
     fp.register(
-        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json -d ostorlab.co "
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
         '"a":["164.90.232.184","3.67.255.218"],'
@@ -111,6 +117,8 @@ def testAgentDnsx_whenMaxSubDomainsSet_runScan(
             "-mx",
             "-resp",
             "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
             "-l",
             fp.any(max=1),
         ],
@@ -121,7 +129,8 @@ def testAgentDnsx_whenMaxSubDomainsSet_runScan(
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
     fp.register(
-        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json -d ostorlab.co "
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
         '"a":["164.90.232.184","3.67.255.218"],'
@@ -158,6 +167,8 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageInScope_runScan(
             "-mx",
             "-resp",
             "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
             "-l",
             fp.any(max=1),
         ],
@@ -168,7 +179,8 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageInScope_runScan(
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
     fp.register(
-        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json -d ostorlab.co "
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
         '"a":["164.90.232.184","3.67.255.218"],'
@@ -208,6 +220,8 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageNotInScope_targetShouldNotBe
             "-mx",
             "-resp",
             "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
             "-l",
             fp.any(max=1),
         ],
@@ -218,7 +232,8 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageNotInScope_targetShouldNotBe
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
     fp.register(
-        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json -d ostorlab.co "
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -resp -json "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
         '"a":["164.90.232.184","3.67.255.218"],'
