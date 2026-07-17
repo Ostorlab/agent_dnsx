@@ -246,3 +246,213 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageNotInScope_targetShouldNotBe
     dnsx_agent_with_domain_scope_arg.process(scan_message)
 
     assert len(agent_mock) == 0
+
+
+def testAgentDnsx_whenIPv4AssetWithPtrRecord_emitsDomainNameAndDnsRecord(
+    ip_v4_message, dnsx_ip_agent, agent_mock, agent_persist_mock, fp
+):
+    """Tests reverse PTR lookup for an IPv4 asset emits the discovered hostname and its DNS record evidence."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-ptr",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"8.8.8.8","resolver":["1.0.0.1:53","8.8.8.8:53"],'
+        '"ptr":["dns.google"],"status_code":"NOERROR",'
+        '"timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
+    )
+
+    dnsx_ip_agent.start()
+    dnsx_ip_agent.process(ip_v4_message)
+
+    assert len(agent_mock) == 2
+    assert agent_mock[0].selector == "v3.asset.domain_name.dns_record"
+    assert agent_mock[0].data["name"] == "8.8.8.8"
+    assert agent_mock[0].data["record"] == "ptr"
+    assert agent_mock[0].data["values"] == ["dns.google"]
+    assert agent_mock[1].selector == "v3.asset.domain_name"
+    assert agent_mock[1].data["name"] == "dns.google"
+
+
+def testAgentDnsx_whenIPv6AssetWithPtrRecord_emitsDomainNameAndDnsRecord(
+    ip_v6_message, dnsx_ip_agent, agent_mock, agent_persist_mock, fp
+):
+    """Tests reverse PTR lookup for an IPv6 asset emits the discovered hostname and its DNS record evidence."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-ptr",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"2001:4860:4860::8888","resolver":["1.0.0.1:53","8.8.8.8:53"],'
+        '"ptr":["dns.google"],"status_code":"NOERROR",'
+        '"timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
+    )
+
+    dnsx_ip_agent.start()
+    dnsx_ip_agent.process(ip_v6_message)
+
+    assert len(agent_mock) == 2
+    assert agent_mock[0].selector == "v3.asset.domain_name.dns_record"
+    assert agent_mock[0].data["name"] == "2001:4860:4860::8888"
+    assert agent_mock[0].data["record"] == "ptr"
+    assert agent_mock[0].data["values"] == ["dns.google"]
+    assert agent_mock[1].selector == "v3.asset.domain_name"
+    assert agent_mock[1].data["name"] == "dns.google"
+
+
+def testAgentDnsx_whenIPAssetWithoutPtrRecord_emitsNothing(
+    ip_v4_message, dnsx_ip_agent, agent_mock, agent_persist_mock, fp
+):
+    """Tests an IP with no PTR record is handled gracefully and emits nothing."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-ptr",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout="",
+    )
+
+    dnsx_ip_agent.start()
+    dnsx_ip_agent.process(ip_v4_message)
+
+    assert len(agent_mock) == 0
+
+
+def testAgentDnsx_whenIPLookupFails_emitsNothing(
+    ip_v4_message, dnsx_ip_agent, agent_mock, agent_persist_mock, fp
+):
+    """Tests a failing PTR lookup does not crash the agent and emits nothing."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-ptr",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        returncode=1,
+        stdout="",
+    )
+
+    dnsx_ip_agent.start()
+    dnsx_ip_agent.process(ip_v4_message)
+
+    assert len(agent_mock) == 0
+
+
+def testAgentDnsx_whenSameIPProcessedTwice_processesItOnlyOnce(
+    ip_v4_message, dnsx_ip_agent, agent_mock, agent_persist_mock, fp
+):
+    """Tests the same IP asset is not processed twice."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-ptr",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"8.8.8.8","resolver":["1.0.0.1:53","8.8.8.8:53"],'
+        '"ptr":["dns.google"],"status_code":"NOERROR",'
+        '"timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
+    )
+
+    dnsx_ip_agent.start()
+    dnsx_ip_agent.process(ip_v4_message)
+    dnsx_ip_agent.process(ip_v4_message)
+
+    assert len(agent_mock) == 2
+
+
+def testAgentDnsx_whenHostnameDiscoveredFromMultipleIPs_emitsHostnameOnce(
+    ip_v4_message, ip_v6_message, dnsx_ip_agent, agent_mock, agent_persist_mock, fp
+):
+    """Tests the same hostname discovered from different IPs is emitted as a domain name only once."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-ptr",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"8.8.8.8","resolver":["1.0.0.1:53","8.8.8.8:53"],'
+        '"ptr":["dns.google"],"status_code":"NOERROR",'
+        '"timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
+        occurrences=2,
+    )
+
+    dnsx_ip_agent.start()
+    dnsx_ip_agent.process(ip_v4_message)
+    dnsx_ip_agent.process(ip_v6_message)
+
+    assert len(agent_mock) == 3
+    domain_name_messages = [
+        m for m in agent_mock if m.selector == "v3.asset.domain_name"
+    ]
+    assert len(domain_name_messages) == 1
+    assert domain_name_messages[0].data["name"] == "dns.google"
+
+
+def testAgentDnsx_whenPtrHostnameEndsWithDot_emitsNormalizedHostname(
+    ip_v4_message, dnsx_ip_agent, agent_mock, agent_persist_mock, fp
+):
+    """Tests the trailing dot of a PTR hostname is stripped before emitting the domain name."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-ptr",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"8.8.8.8","resolver":["1.0.0.1:53","8.8.8.8:53"],'
+        '"ptr":["dns.google."],"status_code":"NOERROR",'
+        '"timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
+    )
+
+    dnsx_ip_agent.start()
+    dnsx_ip_agent.process(ip_v4_message)
+
+    domain_name_messages = [
+        m for m in agent_mock if m.selector == "v3.asset.domain_name"
+    ]
+    assert len(domain_name_messages) == 1
+    assert domain_name_messages[0].data["name"] == "dns.google"

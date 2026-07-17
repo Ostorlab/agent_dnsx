@@ -26,6 +26,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 OUTPUT_SUFFIX = ".json"
+IPV4_SELECTOR = "v3.asset.ip.v4"
+IPV6_SELECTOR = "v3.asset.ip.v6"
+PTR_RECORD = "ptr"
 _DNSX_RESOLVERS: str = ",".join(
     (
         "1.1.1.1",  # Cloudflare primary.
@@ -56,6 +59,13 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         Args:
             message:
         """
+        if message.selector in (IPV4_SELECTOR, IPV6_SELECTOR):
+            self._process_ip(message)
+        else:
+            self._process_domain(message)
+
+    def _process_domain(self, message: m.Message) -> None:
+        """Run the DNS enrichment flow for a domain name asset."""
         domain = message.data["name"]
         wordlist = self.args.get("wordlist")
         logger.info("scanning domain %s", domain)
@@ -73,6 +83,18 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             results = self._run_dnsx(domain, wordlist)
             if results is not None:
                 self._emit_results(domain, results)
+
+    def _process_ip(self, message: m.Message) -> None:
+        """Run a reverse PTR lookup for an IP asset and emit discovered hostnames."""
+        ip = message.data["host"]
+        logger.info("running reverse PTR lookup for IP %s", ip)
+        if not self.set_add(b"agent_dnsx_asset", ip):
+            logger.info("target %s/ was processed before, exiting", ip)
+            return
+
+        results = self._run_dnsx_ptr(ip)
+        if results is not None:
+            self._emit_ptr_results(ip, results)
 
     def _is_domain_in_scope(self, domain: str) -> bool:
         """Check if a domain is in the scan scope with a regular expression."""
@@ -183,6 +205,58 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             _DNSX_RESOLVERS,
             "-l",
             domain_file,
+        ]
+
+    def _emit_ptr_results(self, ip: str, results: List) -> None:
+        """Emit PTR record evidence and discovered hostnames for an IP asset."""
+        for record in result_parser.parse_results(results):
+            if record.record != PTR_RECORD or len(record.value) == 0:
+                continue
+            logger.info("emitting result for %s", record)
+            self.emit(
+                selector="v3.asset.domain_name.dns_record",
+                data={
+                    "name": ip,
+                    "record": record.record,
+                    "values": record.value,
+                },
+            )
+            for hostname in record.value:
+                hostname = hostname.rstrip(".")
+                if not self.set_add(b"agent_dnsx_ptr_hostname", hostname):
+                    logger.info("hostname %s was emitted before, skipping", hostname)
+                    continue
+                self.emit(selector="v3.asset.domain_name", data={"name": hostname})
+
+    def _run_dnsx_ptr(self, ip: str):
+        """Run dnsx reverse PTR lookup for an IP and returns the results."""
+        with tempfile.NamedTemporaryFile() as input_ip:
+            input_ip.write(ip.encode())
+            input_ip.flush()
+            command = self._prepare_command_ptr(input_ip.name)
+            logger.info("running command %s", command)
+            result = subprocess.run(command, capture_output=True, check=False)
+            if result.returncode == 0 and result.stdout != b"":
+                return [
+                    json.loads(l)
+                    for l in result.stdout.decode().split("\n")  # noqa: E741
+                    if l != ""  # noqa: E741
+                ]
+            else:
+                logger.warning("Empty result file for IP %s", ip)
+
+    def _prepare_command_ptr(self, ip_file: str) -> list[str]:
+        """Prepare dnsx reverse PTR lookup command."""
+        return [
+            "dnsx",
+            "-silent",
+            "-ptr",
+            "-resp",
+            "-json",
+            "-r",
+            _DNSX_RESOLVERS,
+            "-l",
+            ip_file,
         ]
 
 
