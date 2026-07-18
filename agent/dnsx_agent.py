@@ -5,7 +5,9 @@ import subprocess
 import tempfile
 import json
 import re
-from typing import List, Optional
+from typing import Any
+from typing import List
+from typing import Optional
 
 from rich import logging as rich_logging
 from ostorlab.agent import agent, definitions as agent_definitions
@@ -26,8 +28,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 OUTPUT_SUFFIX = ".json"
-IPV4_SELECTOR = "v3.asset.ip.v4"
-IPV6_SELECTOR = "v3.asset.ip.v6"
+IP_SELECTOR_PREFIX = "v3.asset.ip"
 PTR_RECORD = "ptr"
 _DNSX_RESOLVERS: str = ",".join(
     (
@@ -59,7 +60,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         Args:
             message:
         """
-        if message.selector in (IPV4_SELECTOR, IPV6_SELECTOR):
+        if message.selector.startswith(IP_SELECTOR_PREFIX):
             self._process_ip(message)
         else:
             self._process_domain(message)
@@ -88,7 +89,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         """Run a reverse PTR lookup for an IP asset and emit discovered hostnames."""
         ip = message.data["host"]
         logger.info("running reverse PTR lookup for IP %s", ip)
-        if not self.set_add(b"agent_dnsx_asset", ip):
+        if not self.set_add(b"agent_dnsx_ip_asset", ip):
             logger.info("target %s/ was processed before, exiting", ip)
             return
 
@@ -207,8 +208,14 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             domain_file,
         ]
 
-    def _emit_ptr_results(self, ip: str, results: List) -> None:
-        """Emit PTR record evidence and discovered hostnames for an IP asset."""
+    def _emit_ptr_results(self, ip: str, results: list[dict[str, Any]]) -> None:
+        """Emit PTR record evidence and discovered hostnames for an IP asset.
+
+        For PTR records, the ``name`` field of the emitted
+        ``v3.asset.domain_name.dns_record`` evidence carries the reversed IP
+        address rather than a domain name, so the origin of the discovered
+        hostnames remains visible to downstream agents.
+        """
         for record in result_parser.parse_results(results):
             if record.record != PTR_RECORD or len(record.value) == 0:
                 continue
@@ -228,7 +235,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
                     continue
                 self.emit(selector="v3.asset.domain_name", data={"name": hostname})
 
-    def _run_dnsx_ptr(self, ip: str):
+    def _run_dnsx_ptr(self, ip: str) -> list[dict[str, Any]] | None:
         """Run dnsx reverse PTR lookup for an IP and returns the results."""
         with tempfile.NamedTemporaryFile() as input_ip:
             input_ip.write(ip.encode())
