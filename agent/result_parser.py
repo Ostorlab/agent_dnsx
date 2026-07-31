@@ -1,7 +1,6 @@
 """Module to parse dnsx json results."""
 
 import dataclasses
-from typing import List
 
 RECORDS = ["a", "aaaa", "cname", "ns", "txt", "ptr", "mx"]
 
@@ -11,10 +10,10 @@ class Record:
     """Record dataclass to pass to the emit method."""
 
     record: str
-    value: List[str]
+    value: list[str]
 
 
-def parse_results(results: List):
+def parse_results(results: list):
     """Parses JSON generated Dnsx results and yield record entries.
 
     Args:

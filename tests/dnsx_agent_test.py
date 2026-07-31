@@ -1,7 +1,5 @@
 """Unittests for Dnsx agent."""
 
-from typing import List, Dict
-
 import pytest_subprocess
 from ostorlab.agent.message import message
 
@@ -149,8 +147,8 @@ def testAgentDnsx_whenMaxSubDomainsSet_runScan(
 def testAgentDnsx_withDomainScopeArgAndDomainMessageInScope_runScan(
     scan_message: message.Message,
     dnsx_agent_with_domain_scope_arg: dnsx_agent.DnsxAgent,
-    agent_mock: List[message.Message],
-    agent_persist_mock: Dict[str | bytes, str | bytes],
+    agent_mock: list[message.Message],
+    agent_persist_mock: dict[str | bytes, str | bytes],
     fp: pytest_subprocess.FakeProcess,
 ):
     """Ensure the domain scope argument is enforced, and domains in the scope should be scanned."""
@@ -198,8 +196,8 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageInScope_runScan(
 
 def testAgentDnsx_withDomainScopeArgAndDomainMessageNotInScope_targetShouldNotBeScanned(
     dnsx_agent_with_domain_scope_arg: dnsx_agent.DnsxAgent,
-    agent_mock: List[message.Message],
-    agent_persist_mock: Dict[str | bytes, str | bytes],
+    agent_mock: list[message.Message],
+    agent_persist_mock: dict[str | bytes, str | bytes],
     fp: pytest_subprocess.FakeProcess,
 ):
     """Ensure the domain scope argument is enforced, and domains not in the scope should not be scanned."""

@@ -2,7 +2,6 @@
 
 import json
 import pathlib
-from typing import List
 
 import pytest
 from ostorlab.agent import definitions as agent_definitions
@@ -56,11 +55,9 @@ def test_agent1():
             redis_url="redis://redis",
             args=[
                 utils_definitions.Arg(
-                    **{
-                        "name": "wordlist",
-                        "type": "string",
-                        "value": json.dumps("agent/wordlists/100_list.txt").encode(),
-                    }
+                    name="wordlist",
+                    type="string",
+                    value=json.dumps("agent/wordlists/100_list.txt").encode(),
                 ),
             ],
             healthcheck_port=5301,
@@ -94,11 +91,9 @@ def test_agent3():
             redis_url="redis://redis",
             args=[
                 utils_definitions.Arg(
-                    **{
-                        "name": "wordlist",
-                        "type": "string",
-                        "value": json.dumps("agent/wordlists/100_list.txt").encode(),
-                    }
+                    name="wordlist",
+                    type="string",
+                    value=json.dumps("agent/wordlists/100_list.txt").encode(),
                 ),
                 utils_definitions.Arg(
                     name="max_subdomains", type="int", value=json.dumps(1).encode()
@@ -110,7 +105,7 @@ def test_agent3():
 
 
 @pytest.fixture
-def dnsx_ip_agent(agent_mock: List[message.Message]):
+def dnsx_ip_agent(agent_mock: list[message.Message]):
     """DNSX Agent fixture without arguments for testing IP reverse PTR lookups."""
     del agent_mock
     with (pathlib.Path(__file__).parent.parent / "ostorlab.yaml").open() as yaml_o:
@@ -127,7 +122,7 @@ def dnsx_ip_agent(agent_mock: List[message.Message]):
 
 
 @pytest.fixture
-def dnsx_agent_with_domain_scope_arg(agent_mock: List[message.Message]):
+def dnsx_agent_with_domain_scope_arg(agent_mock: list[message.Message]):
     """DNSX Agent fixture with domain scope argument for testing purposes."""
     del agent_mock
     with (pathlib.Path(__file__).parent.parent / "ostorlab.yaml").open() as yaml_o:
