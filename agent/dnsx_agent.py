@@ -1,22 +1,20 @@
 """Dnsx Agent implementation"""
 
+import json
 import logging
+import re
 import subprocess
 import tempfile
-import json
-import re
 from typing import Any
-from typing import List
-from typing import Optional
 
-from rich import logging as rich_logging
-from ostorlab.agent import agent, definitions as agent_definitions
+from ostorlab.agent import agent
+from ostorlab.agent import definitions as agent_definitions
+from ostorlab.agent.message import message as m
 from ostorlab.agent.mixins import agent_persist_mixin as persist_mixin
 from ostorlab.runtimes import definitions as runtime_definitions
-from ostorlab.agent.message import message as m
+from rich import logging as rich_logging
 
 from agent import result_parser
-
 
 logging.basicConfig(
     format="%(message)s",
@@ -30,16 +28,7 @@ logger = logging.getLogger(__name__)
 OUTPUT_SUFFIX = ".json"
 IP_SELECTOR_PREFIX = "v3.asset.ip"
 PTR_RECORD = "ptr"
-_DNSX_RESOLVERS: str = ",".join(
-    (
-        "1.1.1.1",  # Cloudflare primary.
-        "1.0.0.1",  # Cloudflare secondary.
-        "8.8.8.8",  # Google Public DNS primary.
-        "8.8.4.4",  # Google Public DNS secondary.
-        "9.9.9.9",  # Quad9 primary.
-        "149.112.112.112",  # Quad9 secondary.
-    )
-)
+_DNSX_RESOLVERS: str = "1.1.1.1,1.0.0.1,8.8.8.8,8.8.4.4,9.9.9.9,149.112.112.112"
 
 
 class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
@@ -52,7 +41,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
     ) -> None:
         agent.Agent.__init__(self, agent_definition, agent_settings)
         persist_mixin.AgentPersistMixin.__init__(self, agent_settings)
-        self._scope_domain_regex: Optional[str] = self.args.get("scope_domain_regex")
+        self._scope_domain_regex: str | None = self.args.get("scope_domain_regex")
 
     def process(self, message: m.Message) -> None:
         """Trigger dnsx scan and emits findings
@@ -112,7 +101,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         else:
             return True
 
-    def _emit_results(self, domain: str, results: List) -> None:
+    def _emit_results(self, domain: str, results: list) -> None:
         """Parses results and emits records."""
 
         counter = 0
@@ -133,16 +122,14 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
                 )
                 counter += 1
 
-    def _run_dnsx(self, domain: str, wordlist: Optional[str] = None):
+    def _run_dnsx(self, domain: str, wordlist: str | None = None):
         """Run dnsx and returns the results."""
         command = self._prepare_command(domain, wordlist)
         logger.info("running command %s", command)
         result = subprocess.run(command, capture_output=True, check=False)
         if result.returncode == 0 and result.stdout != b"":
             return [
-                json.loads(l)
-                for l in result.stdout.decode().split("\n")  # noqa: E741
-                if l != ""  # noqa: E741
+                json.loads(l) for l in result.stdout.decode().split("\n") if l != ""
             ]
         else:
             logger.warning("Empty result file for domain %s", domain)
@@ -181,9 +168,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             result = subprocess.run(command, capture_output=True, check=False)
             if result.returncode == 0 and result.stdout != b"":
                 return [
-                    json.loads(l)
-                    for l in result.stdout.decode().split("\n")  # noqa: E741
-                    if l != ""  # noqa: E741
+                    json.loads(l) for l in result.stdout.decode().split("\n") if l != ""
                 ]
             else:
                 logger.warning("Empty result file for domain %s", domain)
@@ -245,9 +230,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             result = subprocess.run(command, capture_output=True, check=False)
             if result.returncode == 0 and result.stdout != b"":
                 return [
-                    json.loads(l)
-                    for l in result.stdout.decode().split("\n")  # noqa: E741
-                    if l != ""  # noqa: E741
+                    json.loads(l) for l in result.stdout.decode().split("\n") if l != ""
                 ]
             else:
                 logger.warning("Empty result file for IP %s", ip)
