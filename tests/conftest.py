@@ -5,6 +5,7 @@ import json
 import pathlib
 
 import pytest
+import pytest_subprocess
 from ostorlab.agent import definitions as agent_definitions
 from ostorlab.agent.message import message
 from ostorlab.runtimes import definitions as runtime_definitions
@@ -161,3 +162,26 @@ def dnsx_record_agent() -> dnsx_agent.DnsxAgent:
             healthcheck_port=next(_RECORD_AGENT_PORTS),
         )
         return dnsx_agent.DnsxAgent(definition, settings)
+
+
+@pytest.fixture
+def register_tls_rpt_lookup(fp: pytest_subprocess.FakeProcess):
+    """Register the TLS-RPT lookup the agent runs for every in scope domain."""
+
+    def _register(stdout: str = "") -> None:
+        fp.register(
+            [
+                "dnsx",
+                "-silent",
+                "-txt",
+                "-resp",
+                "-json",
+                "-r",
+                dnsx_agent._DNSX_RESOLVERS,
+                "-l",
+                fp.any(max=1),
+            ],
+            stdout=stdout,
+        )
+
+    return _register
