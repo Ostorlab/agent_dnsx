@@ -518,7 +518,11 @@ def testAgentDnsx_whenDomainHasCaaRecord_emitsCaaRecord(
     agent_persist_mock: dict[str | bytes, str | bytes],
     fp: pytest_subprocess.FakeProcess,
 ):
-    """CAA names the authorities allowed to issue certificates for the domain."""
+    """CAA names the authorities allowed to issue certificates for the domain.
+
+    dnsx returns the record values only, without the flags and tag a zone file carries,
+    so an issue entry and an iodef entry are indistinguishable downstream.
+    """
     fp.register(
         [
             "dnsx",
@@ -539,8 +543,8 @@ def testAgentDnsx_whenDomainHasCaaRecord_emitsCaaRecord(
             "-l",
             fp.any(max=1),
         ],
-        stdout='{"host":"ostorlab.co","caa":["0 issue \\"letsencrypt.org\\"",'
-        '"0 iodef \\"mailto:security@ostorlab.co\\""],"status_code":"NOERROR"}',
+        stdout='{"host":"github.com","caa":["sectigo.com","globalsign.com",'
+        '"letsencrypt.org","digicert.com"],"status_code":"NOERROR"}',
     )
 
     dnsx_record_agent.start()
@@ -550,6 +554,8 @@ def testAgentDnsx_whenDomainHasCaaRecord_emitsCaaRecord(
     assert len(caa_messages) == 1
     assert caa_messages[0].selector == "v3.asset.domain_name.dns_record"
     assert caa_messages[0].data["values"] == [
-        '0 issue "letsencrypt.org"',
-        '0 iodef "mailto:security@ostorlab.co"',
+        "sectigo.com",
+        "globalsign.com",
+        "letsencrypt.org",
+        "digicert.com",
     ]
