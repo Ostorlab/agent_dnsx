@@ -32,15 +32,52 @@ def testParseResults_whenRecordIsSoaObject_yieldsPresentationString():
     ]
 
 
-def testParseResults_whenSoaObjectIsPartial_skipsMissingFields():
-    """A resolver may answer with only part of the SOA, which must not render as blanks."""
+def testParseResults_whenSoaFieldIsOmitted_keepsItsPosition():
+    """A gap renders as its default rather than shifting later values into wrong slots."""
     results = [{"soa": [{"ns": "dns1.p04.nsone.net.", "serial": 7}]}]
 
     records = {
         record.record: record.value for record in result_parser.parse_results(results)
     }
 
-    assert records["soa"] == ["dns1.p04.nsone.net. 7"]
+    assert records["soa"] == ["dns1.p04.nsone.net. . 7 0 0 0 0"]
+
+
+def testParseResults_whenSoaOmitsOnlyMinttl_rendersItAsZero():
+    """minttl is often 0, which dnsx drops from the json."""
+    results = [
+        {
+            "soa": [
+                {
+                    "ns": "dns1.p04.nsone.net.",
+                    "mailbox": "hostmaster.nsone.net.",
+                    "serial": 7,
+                    "refresh": 43200,
+                    "retry": 7200,
+                    "expire": 1209600,
+                }
+            ]
+        }
+    ]
+
+    records = {
+        record.record: record.value for record in result_parser.parse_results(results)
+    }
+
+    assert records["soa"] == [
+        "dns1.p04.nsone.net. hostmaster.nsone.net. 7 43200 7200 1209600 0"
+    ]
+
+
+def testParseResults_whenSoaNameIsOmitted_rendersTheRootLabel():
+    """A name field is rendered from its default like any other, keeping seven slots."""
+    results = [{"soa": [{"mailbox": "hostmaster.nsone.net.", "serial": 7}]}]
+
+    records = {
+        record.record: record.value for record in result_parser.parse_results(results)
+    }
+
+    assert records["soa"] == [". hostmaster.nsone.net. 7 0 0 0 0"]
 
 
 def testParseResults_whenSoaIsListOfStrings_yieldsValuesUnchanged():

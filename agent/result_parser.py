@@ -6,9 +6,17 @@ import typing
 
 RECORDS = ["a", "aaaa", "cname", "ns", "txt", "ptr", "mx", "caa"]
 SOA_RECORD = "soa"
-# dnsx returns SOA entries as objects, unlike every other record type. These are their
-# fields in zone file presentation order.
-SOA_FIELDS = ["ns", "mailbox", "serial", "refresh", "retry", "expire", "minttl"]
+# dnsx returns SOA entries as objects and omits zero values, so each field is paired
+# with what an absent key stands for.
+SOA_FIELDS = {
+    "ns": ".",
+    "mailbox": ".",
+    "serial": "0",
+    "refresh": "0",
+    "retry": "0",
+    "expire": "0",
+    "minttl": "0",
+}
 
 
 @dataclasses.dataclass
@@ -33,8 +41,10 @@ def _format_soa(entries: collections.abc.Sequence[typing.Any]) -> list[str]:
         if not isinstance(entry, dict):
             values.append(str(entry))
             continue
-        fields = [str(entry.get(field, "")) for field in SOA_FIELDS]
-        values.append(" ".join(field for field in fields if field != ""))
+        fields = [
+            str(entry.get(field, default)) for field, default in SOA_FIELDS.items()
+        ]
+        values.append(" ".join(fields))
     return values
 
 
