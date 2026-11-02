@@ -28,6 +28,10 @@ logger = logging.getLogger(__name__)
 OUTPUT_SUFFIX = ".json"
 IP_SELECTOR_PREFIX = "v3.asset.ip"
 PTR_RECORD = "ptr"
+TXT_RECORD = "txt"
+# TLS-RPT is published as a TXT record at this prefix, see RFC 8460.
+TLS_RPT_PREFIX = "_smtp._tls"
+TLS_RPT_RECORD = "tls_rpt"
 _DNSX_RESOLVERS: str = "1.1.1.1,1.0.0.1,8.8.8.8,8.8.4.4,9.9.9.9,149.112.112.112"
 
 
@@ -68,6 +72,8 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         results = self._run_dnsx_resolve(domain)
         if results is not None:
             self._emit_results(domain, results)
+
+        self._emit_tls_rpt(domain)
 
         if wordlist is not None:
             results = self._run_dnsx(domain, wordlist)
@@ -189,6 +195,54 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             "-mx",
             "-soa",
             "-caa",
+            "-resp",
+            "-json",
+            "-r",
+            _DNSX_RESOLVERS,
+            "-l",
+            domain_file,
+        ]
+
+    def _emit_tls_rpt(self, domain: str) -> None:
+        """Emit the TLS-RPT policy of a domain, keyed by the domain rather than the
+        prefixed name it is published under."""
+        results = self._run_dnsx_txt(f"{TLS_RPT_PREFIX}.{domain}")
+        if results is None:
+            return
+        for record in result_parser.parse_results(results):
+            if record.record != TXT_RECORD or len(record.value) == 0:
+                continue
+            logger.info("emitting TLS-RPT record for %s: %s", domain, record.value)
+            self.emit(
+                selector="v3.asset.domain_name.dns_record",
+                data={
+                    "name": domain,
+                    "record": TLS_RPT_RECORD,
+                    "values": record.value,
+                },
+            )
+
+    def _run_dnsx_txt(self, domain: str) -> list[dict[str, Any]] | None:
+        """Run a TXT only dnsx lookup for a domain and returns the results."""
+        with tempfile.NamedTemporaryFile() as input_domain:
+            input_domain.write(domain.encode())
+            input_domain.flush()
+            command = self._prepare_command_txt(input_domain.name)
+            logger.info("running command %s", command)
+            result = subprocess.run(command, capture_output=True, check=False)
+            if result.returncode == 0 and result.stdout != b"":
+                return [
+                    json.loads(l) for l in result.stdout.decode().split("\n") if l != ""
+                ]
+            else:
+                logger.warning("Empty result file for domain %s", domain)
+
+    def _prepare_command_txt(self, domain_file: str) -> list[str]:
+        """Prepare a TXT only dnsx command."""
+        return [
+            "dnsx",
+            "-silent",
+            "-txt",
             "-resp",
             "-json",
             "-r",

@@ -7,7 +7,12 @@ from agent import dnsx_agent
 
 
 def testAgentDnsx_whenDomainNameAssetWithWordlist_runScan(
-    scan_message, test_agent1, agent_mock, agent_persist_mock, fp
+    scan_message,
+    test_agent1,
+    agent_mock,
+    agent_persist_mock,
+    fp,
+    register_tls_rpt_lookup,
 ):
     """Tests running the agent and emitting vulnerabilities."""
     fp.register(
@@ -46,6 +51,8 @@ def testAgentDnsx_whenDomainNameAssetWithWordlist_runScan(
         '"cname":["ostorlab-public-website.netlify.com"],"soa":["dns1.p04.nsone.net","hostmaster.nsone.net"],'
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
+
+    register_tls_rpt_lookup()
 
     test_agent1.start()
     test_agent1.process(scan_message)
@@ -55,7 +62,12 @@ def testAgentDnsx_whenDomainNameAssetWithWordlist_runScan(
 
 
 def testAgentDnsx_whenDomainNameAsset_runScan(
-    scan_message, test_agent2, agent_mock, agent_persist_mock, fp
+    scan_message,
+    test_agent2,
+    agent_mock,
+    agent_persist_mock,
+    fp,
+    register_tls_rpt_lookup,
 ):
     """Tests running the agent and emitting vulnerabilities."""
     fp.register(
@@ -94,6 +106,8 @@ def testAgentDnsx_whenDomainNameAsset_runScan(
         '"cname":["ostorlab-public-website.netlify.com"],"soa":["dns1.p04.nsone.net","hostmaster.nsone.net"],'
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
+
+    register_tls_rpt_lookup()
 
     test_agent2.start()
     test_agent2.process(scan_message)
@@ -103,7 +117,12 @@ def testAgentDnsx_whenDomainNameAsset_runScan(
 
 
 def testAgentDnsx_whenMaxSubDomainsSet_runScan(
-    scan_message, test_agent3, agent_mock, agent_persist_mock, fp
+    scan_message,
+    test_agent3,
+    agent_mock,
+    agent_persist_mock,
+    fp,
+    register_tls_rpt_lookup,
 ):
     """Tests running the agent and emitting vulnerabilities."""
     fp.register(
@@ -142,6 +161,8 @@ def testAgentDnsx_whenMaxSubDomainsSet_runScan(
         '"cname":["ostorlab-public-website.netlify.com"],"soa":["dns1.p04.nsone.net","hostmaster.nsone.net"],'
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
+
+    register_tls_rpt_lookup()
 
     test_agent3.start()
     test_agent3.process(scan_message)
@@ -156,6 +177,7 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageInScope_runScan(
     agent_mock: list[message.Message],
     agent_persist_mock: dict[str | bytes, str | bytes],
     fp: pytest_subprocess.FakeProcess,
+    register_tls_rpt_lookup,
 ):
     """Ensure the domain scope argument is enforced, and domains in the scope should be scanned."""
     fp.register(
@@ -195,6 +217,8 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageInScope_runScan(
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
 
+    register_tls_rpt_lookup()
+
     dnsx_agent_with_domain_scope_arg.start()
     dnsx_agent_with_domain_scope_arg.process(scan_message)
 
@@ -207,6 +231,7 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageNotInScope_targetShouldNotBe
     agent_mock: list[message.Message],
     agent_persist_mock: dict[str | bytes, str | bytes],
     fp: pytest_subprocess.FakeProcess,
+    register_tls_rpt_lookup,
 ):
     """Ensure the domain scope argument is enforced, and domains not in the scope should not be scanned."""
     del agent_persist_mock
@@ -249,6 +274,8 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageNotInScope_targetShouldNotBe
         '"cname":["ostorlab-public-website.netlify.com"],"soa":["dns1.p04.nsone.net","hostmaster.nsone.net"],'
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
+
+    register_tls_rpt_lookup()
 
     dnsx_agent_with_domain_scope_arg.start()
     dnsx_agent_with_domain_scope_arg.process(scan_message)
@@ -472,6 +499,7 @@ def testAgentDnsx_whenDomainHasSoaRecord_emitsSoaAsPresentationString(
     agent_mock: list[message.Message],
     agent_persist_mock: dict[str | bytes, str | bytes],
     fp: pytest_subprocess.FakeProcess,
+    register_tls_rpt_lookup,
 ):
     """dnsx returns SOA as an object while every other record is a list of strings, so it
     must be rendered before it reaches a repeated string proto field."""
@@ -500,6 +528,8 @@ def testAgentDnsx_whenDomainHasSoaRecord_emitsSoaAsPresentationString(
         '"expire":1209600,"minttl":3600}],"status_code":"NOERROR"}',
     )
 
+    register_tls_rpt_lookup()
+
     test_agent2.start()
     test_agent2.process(scan_message)
 
@@ -517,6 +547,7 @@ def testAgentDnsx_whenDomainHasCaaRecord_emitsCaaRecord(
     agent_mock: list[message.Message],
     agent_persist_mock: dict[str | bytes, str | bytes],
     fp: pytest_subprocess.FakeProcess,
+    register_tls_rpt_lookup,
 ):
     """CAA names the authorities allowed to issue certificates for the domain.
 
@@ -547,6 +578,8 @@ def testAgentDnsx_whenDomainHasCaaRecord_emitsCaaRecord(
         '"letsencrypt.org","digicert.com"],"status_code":"NOERROR"}',
     )
 
+    register_tls_rpt_lookup()
+
     dnsx_record_agent.start()
     dnsx_record_agent.process(scan_message)
 
@@ -559,3 +592,91 @@ def testAgentDnsx_whenDomainHasCaaRecord_emitsCaaRecord(
         "letsencrypt.org",
         "digicert.com",
     ]
+
+
+def testAgentDnsx_whenDomainHasTlsRptRecord_emitsItAgainstTheDomain(
+    scan_message: message.Message,
+    dnsx_record_agent: dnsx_agent.DnsxAgent,
+    agent_mock: list[message.Message],
+    agent_persist_mock: dict[str | bytes, str | bytes],
+    fp: pytest_subprocess.FakeProcess,
+    register_tls_rpt_lookup,
+):
+    """TLS-RPT is published at _smtp._tls but emitted against the domain itself."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-caa",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"ostorlab.co","a":["216.150.1.1"],"status_code":"NOERROR"}',
+    )
+    register_tls_rpt_lookup(
+        '{"host":"_smtp._tls.ostorlab.co",'
+        '"txt":["v=TLSRPTv1; rua=mailto:tlsrpt@ostorlab.co"],"status_code":"NOERROR"}',
+    )
+
+    dnsx_record_agent.start()
+    dnsx_record_agent.process(scan_message)
+
+    tls_rpt_messages = [m for m in agent_mock if m.data.get("record") == "tls_rpt"]
+    assert len(tls_rpt_messages) == 1
+    assert tls_rpt_messages[0].selector == "v3.asset.domain_name.dns_record"
+    assert tls_rpt_messages[0].data["name"] == "ostorlab.co"
+    assert tls_rpt_messages[0].data["values"] == [
+        "v=TLSRPTv1; rua=mailto:tlsrpt@ostorlab.co"
+    ]
+
+
+def testAgentDnsx_whenDomainHasNoTlsRptRecord_emitsNoTlsRptRecord(
+    scan_message: message.Message,
+    dnsx_record_agent: dnsx_agent.DnsxAgent,
+    agent_mock: list[message.Message],
+    agent_persist_mock: dict[str | bytes, str | bytes],
+    fp: pytest_subprocess.FakeProcess,
+    register_tls_rpt_lookup,
+):
+    """Most domains publish no TLS-RPT policy, which stays silent rather than emitting."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-caa",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"ostorlab.co","a":["216.150.1.1"],"status_code":"NOERROR"}',
+    )
+    register_tls_rpt_lookup()
+
+    dnsx_record_agent.start()
+    dnsx_record_agent.process(scan_message)
+
+    assert len([m for m in agent_mock if m.data.get("record") == "tls_rpt"]) == 0
+    assert len([m for m in agent_mock if m.data.get("record") == "a"]) == 1
