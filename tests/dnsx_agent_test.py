@@ -22,6 +22,7 @@ def testAgentDnsx_whenDomainNameAssetWithWordlist_runScan(
             "-ptr",
             "-mx",
             "-soa",
+            "-caa",
             "-resp",
             "-json",
             "-r",
@@ -36,7 +37,7 @@ def testAgentDnsx_whenDomainNameAssetWithWordlist_runScan(
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
     fp.register(
-        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -resp -json "
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -caa -resp -json "
         f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
@@ -69,6 +70,7 @@ def testAgentDnsx_whenDomainNameAsset_runScan(
             "-ptr",
             "-mx",
             "-soa",
+            "-caa",
             "-resp",
             "-json",
             "-r",
@@ -83,7 +85,7 @@ def testAgentDnsx_whenDomainNameAsset_runScan(
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
     fp.register(
-        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -resp -json "
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -caa -resp -json "
         f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
@@ -116,6 +118,7 @@ def testAgentDnsx_whenMaxSubDomainsSet_runScan(
             "-ptr",
             "-mx",
             "-soa",
+            "-caa",
             "-resp",
             "-json",
             "-r",
@@ -130,7 +133,7 @@ def testAgentDnsx_whenMaxSubDomainsSet_runScan(
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
     fp.register(
-        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -resp -json "
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -caa -resp -json "
         f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
@@ -167,6 +170,7 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageInScope_runScan(
             "-ptr",
             "-mx",
             "-soa",
+            "-caa",
             "-resp",
             "-json",
             "-r",
@@ -181,7 +185,7 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageInScope_runScan(
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
     fp.register(
-        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -resp -json "
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -caa -resp -json "
         f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
@@ -221,6 +225,7 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageNotInScope_targetShouldNotBe
             "-ptr",
             "-mx",
             "-soa",
+            "-caa",
             "-resp",
             "-json",
             "-r",
@@ -235,7 +240,7 @@ def testAgentDnsx_withDomainScopeArgAndDomainMessageNotInScope_targetShouldNotBe
         '"has_internal_ips":false,"status_code":"NOERROR","timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
     )
     fp.register(
-        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -resp -json "
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -caa -resp -json "
         f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
         "-w agent/wordlists/100_list.txt",
         stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53","8.8.8.8:53","8.8.4.4:53","1.1.1.1:53"],'
@@ -482,6 +487,7 @@ def testAgentDnsx_whenDomainHasSoaRecord_emitsSoaAsPresentationString(
             "-ptr",
             "-mx",
             "-soa",
+            "-caa",
             "-resp",
             "-json",
             "-r",
@@ -502,4 +508,48 @@ def testAgentDnsx_whenDomainHasSoaRecord_emitsSoaAsPresentationString(
     assert soa_messages[0].selector == "v3.asset.domain_name.dns_record"
     assert soa_messages[0].data["values"] == [
         "dns1.p04.nsone.net. hostmaster.nsone.net. 1 43200 7200 1209600 3600"
+    ]
+
+
+def testAgentDnsx_whenDomainHasCaaRecord_emitsCaaRecord(
+    scan_message: message.Message,
+    dnsx_record_agent: dnsx_agent.DnsxAgent,
+    agent_mock: list[message.Message],
+    agent_persist_mock: dict[str | bytes, str | bytes],
+    fp: pytest_subprocess.FakeProcess,
+):
+    """CAA names the authorities allowed to issue certificates for the domain."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-caa",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"ostorlab.co","caa":["0 issue \\"letsencrypt.org\\"",'
+        '"0 iodef \\"mailto:security@ostorlab.co\\""],"status_code":"NOERROR"}',
+    )
+
+    dnsx_record_agent.start()
+    dnsx_record_agent.process(scan_message)
+
+    caa_messages = [m for m in agent_mock if m.data.get("record") == "caa"]
+    assert len(caa_messages) == 1
+    assert caa_messages[0].selector == "v3.asset.domain_name.dns_record"
+    assert caa_messages[0].data["values"] == [
+        '0 issue "letsencrypt.org"',
+        '0 iodef "mailto:security@ostorlab.co"',
     ]
