@@ -41,8 +41,6 @@ def _format_soa(entries: collections.abc.Sequence[typing.Any]) -> list[str]:
         if not isinstance(entry, dict):
             values.append(str(entry))
             continue
-        if entry.get("ns") is None:
-            continue
         fields = [
             str(entry.get(field, default)) for field, default in SOA_FIELDS.items()
         ]

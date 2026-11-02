@@ -69,15 +69,15 @@ def testParseResults_whenSoaOmitsOnlyMinttl_rendersItAsZero():
     ]
 
 
-def testParseResults_whenSoaEntryHasNoNameserver_emitsNothing():
-    """An entry with no primary nameserver has nothing to report."""
-    results = [{"soa": [{"name": "ostorlab.co"}]}]
+def testParseResults_whenSoaNameIsOmitted_rendersTheRootLabel():
+    """A name field is rendered from its default like any other, keeping seven slots."""
+    results = [{"soa": [{"mailbox": "hostmaster.nsone.net.", "serial": 7}]}]
 
     records = {
         record.record: record.value for record in result_parser.parse_results(results)
     }
 
-    assert records["soa"] == []
+    assert records["soa"] == [". hostmaster.nsone.net. 7 0 0 0 0"]
 
 
 def testParseResults_whenSoaIsListOfStrings_yieldsValuesUnchanged():
