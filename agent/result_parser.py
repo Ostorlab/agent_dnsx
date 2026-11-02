@@ -4,7 +4,7 @@ import collections.abc
 import dataclasses
 import typing
 
-RECORDS = ["a", "aaaa", "cname", "ns", "txt", "ptr", "mx"]
+RECORDS = ["a", "aaaa", "cname", "ns", "txt", "ptr", "mx", "caa"]
 SOA_RECORD = "soa"
 # dnsx returns SOA entries as objects, unlike every other record type. These are their
 # fields in zone file presentation order.

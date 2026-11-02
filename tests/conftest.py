@@ -1,5 +1,6 @@
 """Pytest fixture for the Dnsx agent."""
 
+import itertools
 import json
 import pathlib
 
@@ -10,6 +11,8 @@ from ostorlab.runtimes import definitions as runtime_definitions
 from ostorlab.utils import definitions as utils_definitions
 
 from agent import dnsx_agent
+
+_RECORD_AGENT_PORTS = itertools.count(5310)
 
 
 @pytest.fixture
@@ -140,5 +143,21 @@ def dnsx_agent_with_domain_scope_arg(agent_mock: list[message.Message]):
                 ),
             ],
             healthcheck_port=5301,
+        )
+        return dnsx_agent.DnsxAgent(definition, settings)
+
+
+@pytest.fixture
+def dnsx_record_agent() -> dnsx_agent.DnsxAgent:
+    """DNSX Agent fixture without arguments, on a healthcheck port unique to each build."""
+    with (pathlib.Path(__file__).parent.parent / "ostorlab.yaml").open() as yaml_o:
+        definition = agent_definitions.AgentDefinition.from_yaml(yaml_o)
+        settings = runtime_definitions.AgentSettings(
+            key="agent/ostorlab/dnsx",
+            bus_url="NA",
+            bus_exchange_topic="NA",
+            redis_url="redis://redis",
+            args=[],
+            healthcheck_port=next(_RECORD_AGENT_PORTS),
         )
         return dnsx_agent.DnsxAgent(definition, settings)
