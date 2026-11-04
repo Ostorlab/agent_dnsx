@@ -32,7 +32,39 @@ TXT_RECORD = "txt"
 # TLS-RPT is published as a TXT record at this prefix, see RFC 8460.
 TLS_RPT_PREFIX = "_smtp._tls"
 TLS_RPT_RECORD = "tls_rpt"
+# A policy opens with this case sensitive version, which tells it apart from the
+# other TXT records a wildcard answers the prefixed name with.
+TLS_RPT_VERSION = "v=TLSRPTv1"
+# The version is followed by this delimiter, which separates it from the fields.
+TLS_RPT_FIELD_DELIM = ";"
 _DNSX_RESOLVERS: str = "1.1.1.1,1.0.0.1,8.8.8.8,8.8.4.4,9.9.9.9,149.112.112.112"
+
+
+def _is_tls_rpt_policy(value: str) -> bool:
+    """Check a TXT value opens with the TLS-RPT version and its field delimiter.
+
+    Args:
+        value: A TXT value answered for the prefixed name.
+
+    Returns:
+        Whether the value is a TLS-RPT policy.
+    """
+    stripped = value.strip()
+    if not stripped.startswith(TLS_RPT_VERSION):
+        return False
+    return stripped[len(TLS_RPT_VERSION) :].lstrip().startswith(TLS_RPT_FIELD_DELIM)
+
+
+def _filter_tls_rpt_values(values: list[str]) -> list[str]:
+    """Keep the TXT values that are TLS-RPT policies.
+
+    Args:
+        values: TXT values answered for the prefixed name.
+
+    Returns:
+        The values that are TLS-RPT policies.
+    """
+    return [value for value in values if _is_tls_rpt_policy(value)]
 
 
 class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
@@ -210,15 +242,18 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         if results is None:
             return
         for record in result_parser.parse_results(results):
-            if record.record != TXT_RECORD or len(record.value) == 0:
+            if record.record != TXT_RECORD:
                 continue
-            logger.info("emitting TLS-RPT record for %s: %s", domain, record.value)
+            values = _filter_tls_rpt_values(record.value)
+            if len(values) != 1:
+                continue
+            logger.info("emitting TLS-RPT record for %s: %s", domain, values)
             self.emit(
                 selector="v3.asset.domain_name.dns_record",
                 data={
                     "name": domain,
                     "record": TLS_RPT_RECORD,
-                    "values": record.value,
+                    "values": values,
                 },
             )
 
