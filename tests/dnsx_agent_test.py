@@ -597,7 +597,15 @@ def testAgentDnsx_whenDomainHasCaaRecord_emitsCaaRecord(
     ]
 
 
+@pytest.mark.parametrize(
+    "txt_value",
+    [
+        "v=TLSRPTv1; rua=mailto:tlsrpt@ostorlab.co",
+        "v=TLSRPTv1;rua=https://tlsrpt.ostorlab.co/report",
+    ],
+)
 def testAgentDnsx_whenDomainHasTlsRptRecord_emitsItAgainstTheDomain(
+    txt_value: str,
     scan_message: message.Message,
     dnsx_record_agent: dnsx_agent.DnsxAgent,
     agent_mock: list[message.Message],
@@ -629,8 +637,13 @@ def testAgentDnsx_whenDomainHasTlsRptRecord_emitsItAgainstTheDomain(
         stdout='{"host":"ostorlab.co","a":["216.150.1.1"],"status_code":"NOERROR"}',
     )
     register_tls_rpt_lookup(
-        '{"host":"_smtp._tls.ostorlab.co",'
-        '"txt":["v=TLSRPTv1; rua=mailto:tlsrpt@ostorlab.co"],"status_code":"NOERROR"}',
+        json.dumps(
+            {
+                "host": "_smtp._tls.ostorlab.co",
+                "txt": [txt_value],
+                "status_code": "NOERROR",
+            }
+        ),
     )
 
     dnsx_record_agent.start()
@@ -640,9 +653,7 @@ def testAgentDnsx_whenDomainHasTlsRptRecord_emitsItAgainstTheDomain(
     assert len(tls_rpt_messages) == 1
     assert tls_rpt_messages[0].selector == "v3.asset.domain_name.dns_record"
     assert tls_rpt_messages[0].data["name"] == "ostorlab.co"
-    assert tls_rpt_messages[0].data["values"] == [
-        "v=TLSRPTv1; rua=mailto:tlsrpt@ostorlab.co"
-    ]
+    assert tls_rpt_messages[0].data["values"] == [txt_value]
 
 
 def testAgentDnsx_whenDomainHasNoTlsRptRecord_emitsNoTlsRptRecord(
@@ -862,6 +873,56 @@ def testAgentDnsx_whenTlsRptValueIsNotAPolicy_emitsNoTlsRptRecord(
             {
                 "host": "_smtp._tls.ostorlab.co",
                 "txt": [txt_value],
+                "status_code": "NOERROR",
+            }
+        ),
+    )
+
+    dnsx_record_agent.start()
+    dnsx_record_agent.process(scan_message)
+
+    assert len([m for m in agent_mock if m.data.get("record") == "tls_rpt"]) == 0
+
+
+def testAgentDnsx_whenTlsRptLookupReturnsTwoPolicies_emitsNoTlsRptRecord(
+    scan_message: message.Message,
+    dnsx_record_agent: dnsx_agent.DnsxAgent,
+    agent_mock: list[message.Message],
+    agent_persist_mock: dict[str | bytes, str | bytes],
+    fp: pytest_subprocess.FakeProcess,
+    register_tls_rpt_lookup,
+):
+    """RFC 8460 treats a domain answering more than one policy as publishing none."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-caa",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"ostorlab.co","a":["216.150.1.1"],"status_code":"NOERROR"}',
+    )
+    register_tls_rpt_lookup(
+        json.dumps(
+            {
+                "host": "_smtp._tls.ostorlab.co",
+                "txt": [
+                    "v=TLSRPTv1; rua=mailto:tlsrpt@ostorlab.co",
+                    "v=TLSRPTv1;rua=https://tlsrpt.ostorlab.co/report",
+                ],
                 "status_code": "NOERROR",
             }
         ),
