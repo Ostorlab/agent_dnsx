@@ -1,5 +1,8 @@
 """Unittests for Dnsx agent."""
 
+import json
+
+import pytest
 import pytest_subprocess
 from ostorlab.agent.message import message
 
@@ -812,22 +815,59 @@ def testAgentDnsx_whenTlsRptLookupMixesAPolicyWithOtherTxt_emitsOnlyThePolicy(
     ]
 
 
-def testIsTlsRptPolicy_whenValueDeclaresTheVersionAndDelimiter_isTrue():
-    """A policy opens with the version, then the delimiter, spacing aside."""
-    assert dnsx_agent._is_tls_rpt_policy("v=TLSRPTv1; rua=mailto:a@b.com") is True
-    assert dnsx_agent._is_tls_rpt_policy("v=TLSRPTv1;rua=mailto:a@b.com") is True
-    assert dnsx_agent._is_tls_rpt_policy("v=TLSRPTv1 ; rua=mailto:a@b.com") is True
+@pytest.mark.parametrize(
+    "txt_value",
+    [
+        "v=spf1 -all",
+        "v=TLSRPTv1",
+        "v=TLSRPTv10; rua=mailto:tlsrpt@ostorlab.co",
+        "v=tlsrptv1; rua=mailto:tlsrpt@ostorlab.co",
+        "rua=mailto:tlsrpt@ostorlab.co; v=TLSRPTv1",
+    ],
+)
+def testAgentDnsx_whenTlsRptValueIsNotAPolicy_emitsNoTlsRptRecord(
+    txt_value: str,
+    scan_message: message.Message,
+    dnsx_record_agent: dnsx_agent.DnsxAgent,
+    agent_mock: list[message.Message],
+    agent_persist_mock: dict[str | bytes, str | bytes],
+    fp: pytest_subprocess.FakeProcess,
+    register_tls_rpt_lookup,
+):
+    """A policy declares the RFC 8460 version first, then its field delimiter."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-caa",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"ostorlab.co","a":["216.150.1.1"],"status_code":"NOERROR"}',
+    )
+    register_tls_rpt_lookup(
+        json.dumps(
+            {
+                "host": "_smtp._tls.ostorlab.co",
+                "txt": [txt_value],
+                "status_code": "NOERROR",
+            }
+        ),
+    )
 
+    dnsx_record_agent.start()
+    dnsx_record_agent.process(scan_message)
 
-def testIsTlsRptPolicy_whenVersionIsNotFollowedByTheDelimiter_isFalse():
-    """RFC 8460 wants a field after the version, so a bare version is not a policy."""
-    assert dnsx_agent._is_tls_rpt_policy("v=TLSRPTv1") is False
-    assert dnsx_agent._is_tls_rpt_policy("v=TLSRPTv1garbage") is False
-    assert dnsx_agent._is_tls_rpt_policy("v=TLSRPTv10; rua=mailto:a@b.com") is False
-
-
-def testIsTlsRptPolicy_whenVersionIsAbsentOrMiscased_isFalse():
-    """The version is case sensitive and comes first."""
-    assert dnsx_agent._is_tls_rpt_policy("v=tlsrptv1; rua=mailto:a@b.com") is False
-    assert dnsx_agent._is_tls_rpt_policy("rua=mailto:a@b.com; v=TLSRPTv1") is False
-    assert dnsx_agent._is_tls_rpt_policy("v=spf1 -all") is False
+    assert len([m for m in agent_mock if m.data.get("record") == "tls_rpt"]) == 0
