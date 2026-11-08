@@ -131,7 +131,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
     def _run_dnsx(self, domain: str, wordlist: str | None = None):
         """Run dnsx and returns the results."""
         command = self._prepare_command(domain, wordlist)
-        logger.info("running command %s", command)
+        logger.debug("running command %s", command)
         result = subprocess.run(command, capture_output=True, check=False)
         if result.returncode == 0 and result.stdout != b"":
             return [
@@ -172,7 +172,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             input_domain.write(domain.encode())
             input_domain.flush()
             command = self._prepare_command_resolve(input_domain.name)
-            logger.info("running command %s", command)
+            logger.debug("running command %s", command)
             result = subprocess.run(command, capture_output=True, check=False)
             if result.returncode == 0 and result.stdout != b"":
                 return [
@@ -228,7 +228,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             input_domain.write(domain.encode())
             input_domain.flush()
             command = self._prepare_command_txt(input_domain.name)
-            logger.info("running command %s", command)
+            logger.debug("running command %s", command)
             result = subprocess.run(command, capture_output=True, check=False)
             if result.returncode == 0 and result.stdout != b"":
                 return [
@@ -284,7 +284,7 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
             input_ip.write(ip.encode())
             input_ip.flush()
             command = self._prepare_command_ptr(input_ip.name)
-            logger.info("running command %s", command)
+            logger.debug("running command %s", command)
             result = subprocess.run(command, capture_output=True, check=False)
             if result.returncode == 0 and result.stdout != b"":
                 return [

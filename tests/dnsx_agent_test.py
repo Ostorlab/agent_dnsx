@@ -1,5 +1,7 @@
 """Unittests for Dnsx agent."""
 
+import logging
+
 import pytest_subprocess
 from ostorlab.agent.message import message
 
@@ -680,3 +682,151 @@ def testAgentDnsx_whenDomainHasNoTlsRptRecord_emitsNoTlsRptRecord(
 
     assert len([m for m in agent_mock if m.data.get("record") == "tls_rpt"]) == 0
     assert len([m for m in agent_mock if m.data.get("record") == "a"]) == 1
+
+
+def testAgentDnsx_whenDomainNameAsset_doesNotLogCommandsAtInfoLevel(
+    scan_message,
+    dnsx_record_agent,
+    agent_mock,
+    agent_persist_mock,
+    fp,
+    register_tls_rpt_lookup,
+    caplog,
+):
+    """Tests that dnsx command lines stay at debug level.
+
+    Every resolution logs its full command line, which floods the shared log
+    sink during large scans, so it must not be emitted at INFO.
+    """
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-caa",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53"],'
+        '"a":["164.90.232.184"],"status_code":"NOERROR",'
+        '"timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
+    )
+    fp.register(
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -caa -resp -json "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
+        "-w agent/wordlists/100_list.txt",
+        stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53"],'
+        '"a":["164.90.232.184"],"status_code":"NOERROR",'
+        '"timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
+    )
+    register_tls_rpt_lookup()
+    dnsx_record_agent.start()
+
+    with caplog.at_level(logging.DEBUG):
+        dnsx_record_agent.process(scan_message)
+
+    command_records = [
+        record for record in caplog.records if "running command" in record.getMessage()
+    ]
+    assert len(command_records) > 0
+    assert all(record.levelno == logging.DEBUG for record in command_records)
+
+
+def testAgentDnsx_whenIPv4Asset_doesNotLogCommandsAtInfoLevel(
+    ip_v4_message, dnsx_ip_agent, agent_mock, agent_persist_mock, fp, caplog
+):
+    """Tests that the reverse PTR lookup command line stays at debug level."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-ptr",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"8.8.8.8","resolver":["1.0.0.1:53"],'
+        '"ptr":["dns.google"],"status_code":"NOERROR",'
+        '"timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
+    )
+    dnsx_ip_agent.start()
+
+    with caplog.at_level(logging.DEBUG):
+        dnsx_ip_agent.process(ip_v4_message)
+
+    command_records = [
+        record for record in caplog.records if "running command" in record.getMessage()
+    ]
+    assert len(command_records) > 0
+    assert all(record.levelno == logging.DEBUG for record in command_records)
+
+
+def testAgentDnsx_whenWordlistConfigured_doesNotLogBruteForceCommandAtInfoLevel(
+    scan_message,
+    dnsx_record_wordlist_agent,
+    agent_mock,
+    agent_persist_mock,
+    fp,
+    register_tls_rpt_lookup,
+    caplog,
+):
+    """Tests that the wordlist brute-force command line stays at debug level."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-caa",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53"],'
+        '"a":["164.90.232.184"],"status_code":"NOERROR",'
+        '"timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
+    )
+    fp.register(
+        "dnsx -silent -a -aaaa -cname -ns -txt -ptr -mx -soa -caa -resp -json "
+        f"-r {dnsx_agent._DNSX_RESOLVERS} -d ostorlab.co "
+        "-w agent/wordlists/100_list.txt",
+        stdout='{"host":"www.ostorlab.co","resolver":["1.0.0.1:53"],'
+        '"a":["164.90.232.184"],"status_code":"NOERROR",'
+        '"timestamp":"2022-04-05T17:25:59.876762366+02:00"}',
+    )
+    register_tls_rpt_lookup()
+    dnsx_record_wordlist_agent.start()
+
+    with caplog.at_level(logging.DEBUG):
+        dnsx_record_wordlist_agent.process(scan_message)
+
+    brute_force_records = [
+        record
+        for record in caplog.records
+        if "running command" in record.getMessage() and "-w" in record.getMessage()
+    ]
+    assert len(brute_force_records) > 0
+    assert all(record.levelno == logging.DEBUG for record in brute_force_records)
