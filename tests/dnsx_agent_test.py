@@ -684,6 +684,96 @@ def testAgentDnsx_whenDomainHasNoTlsRptRecord_emitsNoTlsRptRecord(
     assert len([m for m in agent_mock if m.data.get("record") == "a"]) == 1
 
 
+def testAgentDnsx_whenTlsRptNameIsCnameToRoot_emitsNoTlsRptRecord(
+    scan_message: message.Message,
+    dnsx_record_agent: dnsx_agent.DnsxAgent,
+    agent_mock: list[message.Message],
+    agent_persist_mock: dict[str | bytes, str | bytes],
+    fp: pytest_subprocess.FakeProcess,
+    register_tls_rpt_lookup,
+):
+    """A _smtp._tls CNAME to the root returns the root TXT set, which holds no policy."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-caa",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"ostorlab.co","a":["216.150.1.1"],"status_code":"NOERROR"}',
+    )
+    register_tls_rpt_lookup(
+        '{"host":"_smtp._tls.ostorlab.co","cname":["ostorlab.co"],'
+        '"txt":["facebook-domain-verification=abc","v=spf1 -all"],'
+        '"status_code":"NOERROR"}',
+    )
+
+    dnsx_record_agent.start()
+    dnsx_record_agent.process(scan_message)
+
+    assert len([m for m in agent_mock if m.data.get("record") == "tls_rpt"]) == 0
+
+
+def testAgentDnsx_whenTlsRptLookupMixesPolicyAndOtherTxt_emitsOnlyPolicy(
+    scan_message: message.Message,
+    dnsx_record_agent: dnsx_agent.DnsxAgent,
+    agent_mock: list[message.Message],
+    agent_persist_mock: dict[str | bytes, str | bytes],
+    fp: pytest_subprocess.FakeProcess,
+    register_tls_rpt_lookup,
+):
+    """Only TXT values starting with v=TLSRPTv1 are TLS-RPT policies (RFC 8460)."""
+    fp.register(
+        [
+            "dnsx",
+            "-silent",
+            "-a",
+            "-aaaa",
+            "-cname",
+            "-ns",
+            "-txt",
+            "-ptr",
+            "-mx",
+            "-soa",
+            "-caa",
+            "-resp",
+            "-json",
+            "-r",
+            dnsx_agent._DNSX_RESOLVERS,
+            "-l",
+            fp.any(max=1),
+        ],
+        stdout='{"host":"ostorlab.co","a":["216.150.1.1"],"status_code":"NOERROR"}',
+    )
+    register_tls_rpt_lookup(
+        '{"host":"_smtp._tls.ostorlab.co",'
+        '"txt":["v=spf1 -all","v=TLSRPTv1; rua=mailto:tlsrpt@ostorlab.co"],'
+        '"status_code":"NOERROR"}',
+    )
+
+    dnsx_record_agent.start()
+    dnsx_record_agent.process(scan_message)
+
+    tls_rpt_messages = [m for m in agent_mock if m.data.get("record") == "tls_rpt"]
+    assert len(tls_rpt_messages) == 1
+    assert tls_rpt_messages[0].data["values"] == [
+        "v=TLSRPTv1; rua=mailto:tlsrpt@ostorlab.co"
+    ]
+
+
 def testAgentDnsx_whenDomainNameAsset_doesNotLogCommandsAtInfoLevel(
     scan_message,
     dnsx_record_agent,

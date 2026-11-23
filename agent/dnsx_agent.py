@@ -32,6 +32,9 @@ TXT_RECORD = "txt"
 # TLS-RPT is published as a TXT record at this prefix, see RFC 8460.
 TLS_RPT_PREFIX = "_smtp._tls"
 TLS_RPT_RECORD = "tls_rpt"
+# Only TXT values with this version prefix are TLS-RPT policies, RFC 8460 section 3.
+# Others reach the lookup when _smtp._tls is a CNAME to a name with its own TXT set.
+TLS_RPT_VERSION = "v=TLSRPTv1"
 _DNSX_RESOLVERS: str = "1.1.1.1,1.0.0.1,8.8.8.8,8.8.4.4,9.9.9.9,149.112.112.112"
 
 
@@ -210,15 +213,18 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
         if results is None:
             return
         for record in result_parser.parse_results(results):
-            if record.record != TXT_RECORD or len(record.value) == 0:
+            if record.record != TXT_RECORD:
                 continue
-            logger.info("emitting TLS-RPT record for %s: %s", domain, record.value)
+            policies = [v for v in record.value if v.startswith(TLS_RPT_VERSION)]
+            if len(policies) == 0:
+                continue
+            logger.info("emitting TLS-RPT record for %s: %s", domain, policies)
             self.emit(
                 selector="v3.asset.domain_name.dns_record",
                 data={
                     "name": domain,
                     "record": TLS_RPT_RECORD,
-                    "values": record.value,
+                    "values": policies,
                 },
             )
 
