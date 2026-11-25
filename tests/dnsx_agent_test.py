@@ -2,6 +2,7 @@
 
 import logging
 
+import pytest
 import pytest_subprocess
 from ostorlab.agent.message import message
 
@@ -830,3 +831,25 @@ def testAgentDnsx_whenWordlistConfigured_doesNotLogBruteForceCommandAtInfoLevel(
     ]
     assert len(brute_force_records) > 0
     assert all(record.levelno == logging.DEBUG for record in brute_force_records)
+
+
+@pytest.mark.parametrize("ip", ["1.1.1.1", "2606:4700:4700::1001"])
+def testAgentDnsx_whenDnsRecordNameIsAnIP_skipsTheDomainScan(
+    ip: str,
+    dnsx_record_agent: dnsx_agent.DnsxAgent,
+    agent_mock: list[message.Message],
+    agent_persist_mock: dict[str | bytes, str | bytes],
+    fp: pytest_subprocess.FakeProcess,
+) -> None:
+    """PTR evidence carries the IP as its name, which is not a domain to resolve."""
+    fp.register([fp.any()], occurrences=2)
+    ptr_record = message.Message.from_data(
+        "v3.asset.domain_name.dns_record",
+        data={"name": ip, "record": "ptr", "values": ["one.one.one.one"]},
+    )
+
+    dnsx_record_agent.start()
+    dnsx_record_agent.process(ptr_record)
+
+    assert len(fp.calls) == 0
+    assert len(agent_mock) == 0
