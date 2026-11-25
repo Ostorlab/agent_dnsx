@@ -1,5 +1,6 @@
 """Dnsx Agent implementation"""
 
+import ipaddress
 import json
 import logging
 import re
@@ -35,6 +36,15 @@ TLS_RPT_RECORD = "tls_rpt"
 _DNSX_RESOLVERS: str = "1.1.1.1,1.0.0.1,8.8.8.8,8.8.4.4,9.9.9.9,149.112.112.112"
 
 
+def _is_ip_address(name: str) -> bool:
+    """Check if a name is an IPv4 or IPv6 address, like the name of the PTR evidence this agent emits."""
+    try:
+        ipaddress.ip_address(name)
+    except ValueError:
+        return False
+    return True
+
+
 class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
     """dnsx open source Agent implementation."""
 
@@ -61,6 +71,9 @@ class DnsxAgent(agent.Agent, persist_mixin.AgentPersistMixin):
     def _process_domain(self, message: m.Message) -> None:
         """Run the DNS enrichment flow for a domain name asset."""
         domain = message.data["name"]
+        if _is_ip_address(domain) is True:
+            logger.debug("skipping %s, it is an IP address, not a domain", domain)
+            return
         wordlist = self.args.get("wordlist")
         logger.info("scanning domain %s", domain)
         if not self.set_add(b"agent_dnsx_asset", domain):
